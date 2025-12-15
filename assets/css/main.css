@@ -93,49 +93,109 @@ body{
   display:none;
 }
 
-/* Sonne */
+/* ===== WEATHER EFFECT LAYER ===== */
+#weather-effects{
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 0;
+}
+
+/* -------- RAIN -------- */
+.raindrop{
+  position:absolute;
+  top:-20px;
+  width:2px;
+  height:18px;
+  background:rgba(180,220,255,0.7);
+  animation: rain-fall linear infinite;
+}
+
+@keyframes rain-fall{
+  to{
+    transform: translateY(110vh);
+    opacity:0;
+  }
+}
+
+/* -------- SUN -------- */
 .sun{
-  fill:#f5c542;
-  animation:pulse 3s ease-in-out infinite;
+  position:absolute;
+  top:40px;
+  right:60px;
+  width:140px;
+  height:140px;
+  border-radius:50%;
+  background: radial-gradient(circle, #ffd86b, #f5b800);
+  box-shadow: 0 0 80px rgba(255,200,80,0.6);
+  animation: sun-pulse 4s ease-in-out infinite;
 }
 
-/* Wolken */
+@keyframes sun-pulse{
+  0%,100%{ transform:scale(1); }
+  50%{ transform:scale(1.05); }
+}
+
+/* -------- CLOUDS -------- */
 .cloud{
-  fill:#cfd8dc;
-  animation:float 4s ease-in-out infinite;
+  position:absolute;
+  top:80px;
+  width:200px;
+  height:60px;
+  background:#cfd8dc;
+  border-radius:50px;
+  opacity:.25;
+  animation: cloud-move linear infinite;
 }
 
-/* Regen */
-.rain{
-  stroke:#4da3ff;
-  stroke-width:3;
-  animation:rain 1s linear infinite;
+.cloud::before,
+.cloud::after{
+  content:"";
+  position:absolute;
+  background:#cfd8dc;
+  width:90px;
+  height:90px;
+  top:-40px;
+  left:20px;
+  border-radius:50%;
 }
 
-/* Blitz */
-.bolt{
-  fill:#ffd700;
-  animation:flash 2s infinite;
+.cloud::after{
+  width:120px;
+  height:120px;
+  top:-60px;
+  left:80px;
 }
 
-/* Keyframes */
-@keyframes pulse{
-  0%,100%{transform:scale(1)}
-  50%{transform:scale(1.08)}
+@keyframes cloud-move{
+  from{ transform: translateX(-260px); }
+  to{ transform: translateX(120vw); }
 }
 
-@keyframes float{
-  0%,100%{transform:translateX(0)}
-  50%{transform:translateX(6px)}
+/* WIND ARROW */
+.wind-arrow{
+  margin-left:8px;
+  transform-origin:50% 50%;
+  transition:transform .3s ease;
+  color:var(--accent);
 }
 
-@keyframes rain{
-  0%{opacity:0; transform:translateY(0)}
-  50%{opacity:1}
-  100%{opacity:0; transform:translateY(10px)}
+/* NIGHT MODE */
+body.night{
+  background:#050608;
+  color:#aaa;
 }
 
-@keyframes flash{
-  0%,90%,100%{opacity:1}
-  95%{opacity:0}
+/* CHART */
+#tempChart{
+  margin-top:14px;
+}
+
+/* EFFECT LAYER */
+#weather-effects{
+  position:fixed;
+  inset:0;
+  pointer-events:none;
+  z-index:0;
 }

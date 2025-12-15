@@ -1,30 +1,34 @@
 # 🧭 Smart Dashboard Website (Tile-basiert)
 
 Eine **moderne, dunkle Dashboard-Website** mit **Tile-Übersicht** und mehreren Detailansichten  
-(Uhr, Wetter, weitere Views geplant).
+(Uhr, Wetter, weitere Views erweiterbar).
 
 Das Projekt ist **komplett standalone**:
 - kein Backend
-- keine Abhängigkeit von ioBroker
+- keine Frameworks
 - vollständig lauffähig im Browser
+- ideal für WebView / IFrame
 
 Perfekt geeignet für:
 - 📱 Wand-Tablet
 - 🖥 Desktop-Browser
 - 🧩 Einbindung in **Jarvis Design**
-- 🧩 Einbindung in **ioBroker VIS / VIS-2** (WebView / IFrame)
+- 🧩 Einbindung in **ioBroker VIS / VIS-2**
 - 🌍 Hosting über **GitHub Pages**
 
 ---
 
 ## ✨ Features
 
-### Übersicht
+### 🧭 Übersicht (index.html)
 - Dark Mode mit **goldenen Akzenten**
 - **Tile-basierte Startseite**
-- Sauberes, ruhiges UI (Tablet-optimiert)
+- Ruhiges, aufgeräumtes UI
+- Tablet-optimiertes Grid
 
-### Uhr / Clock View
+---
+
+### 🕒 Uhr / Clock View
 - Große Live-Uhr
 - Deutsches Datum + Wochentag
 - Automatische Begrüßung:
@@ -34,37 +38,44 @@ Perfekt geeignet für:
   - Gute Nacht
 - Tageszeit-Icon (Sonne / Mond)
 
-### Wetter View
-- Dashboard-artiges Layout (Tablet-Stil)
-- Große Temperaturanzeige
-- Wetterzustand + Zusatzinfos
-- **Animierte Wetter-Icons (SVG + CSS)**
-  - Sonne
-  - Wolken
-  - Regen
-  - Gewitter
-- **URL-Payload-Unterstützung**
-- **Dummy-Werte**, falls keine Parameter übergeben werden
+---
 
-### Allgemein
-- Einheitliches Design über alle Views
-- CSS zentral ausgelagert
-- Keine externen APIs nötig
-- Läuft vollständig offline (abgesehen von Icons)
+### 🌦 Wetter View (Advanced)
+Dashboard-artige Wetteransicht im Tablet-Stil:
+
+- Große Temperaturanzeige
+- Wetterbeschreibung (z. B. „clear sky“, „thunderstorm“)
+- Luftfeuchtigkeit & Windgeschwindigkeit
+- 🧭 **Windrichtung als rotierender Pfeil**
+- 📊 **Echte Temperaturkurve** (Forecast-Linie)
+- 🌙 **Automatischer Nachtmodus** (über Sonnenauf- & -untergang)
+- 🌧 **Regen-Effekte über gesamten Screen**
+  - leicht / normal / stark
+- ⚡ **Blitz-Effekt bei Gewitter**
+- ☁️ Wolken-Overlay bei Bewölkung
+- **Robuste Dummy-Werte**, falls Parameter fehlen oder ungültig sind
+
+---
+
+### 🔌 URL- & ioBroker-Integration
+- Alle Views steuerbar über **URL-Payloads**
+- Ideal für Übergabe aus **openweathermap-Adapter**
+- Keine direkte API-Anbindung notwendig
 
 ---
 
 ## 📂 Projektstruktur
 
 /
-├── index.html              (Tile-Übersicht)
+├── index.html                 (Tile-Übersicht)
 ├── views/
-│   ├── clock.html          (Uhr / Lockscreen)
-│   ├── weather.html        (Wetter-Dashboard)
+│   ├── clock.html             (Uhr / Lockscreen)
+│   ├── weather.html           (Wetter-Dashboard)
 │   └── weitere Views …
 ├── assets/
 │   ├── css/
-│   │   └── main.css        (gemeinsames Styling)
+│   │   ├── main.css           (gemeinsames Styling)
+│   │   └── app.css            (Animationen & Effekte)
 │   └── js/
 │       ├── clock.js
 │       └── weather.js
@@ -106,30 +117,49 @@ https://USERNAME.github.io/REPOSITORY/
 
 ---
 
-## 🔗 URL-Payloads (Beispiele)
+## 🔗 URL-Payloads – Wetter (Beispiele)
 
-Wetter-View mit Übergabewerten:
-views/weather.html?temp=16&state=storm&condition=Storm%20with%20Rain
+### Minimal
+views/weather.html?temp=9.8&text=Clear
 
-Unterstützte Parameter (weather):
-- temp      (Temperatur)
-- state     (sunny | cloudy | rain | storm | snow)
-- condition (Freitext)
-- wind
-- humidity
+### Vollständig (openweathermap-kompatibel)
+views/weather.html?
+temp=9.8
+&humidity=85
+&wind=1.03
+&winddir=180
+&clouds=70
+&rainmm=4.2
+&text=Thunderstorm
+&sunrise=1733985600000
+&sunset=1734019200000
+&forecast=9,8,8,10,12,11,9
 
-Fehlende oder ungültige Werte werden automatisch durch Dummy-Werte ersetzt.
+### Unterstützte Parameter (weather)
+- temp        Temperatur
+- text        Wetterbeschreibung
+- humidity    Luftfeuchte (%)
+- wind        Windgeschwindigkeit (m/s)
+- winddir     Windrichtung (Grad)
+- clouds      Bewölkung (%)
+- rainmm      Regenmenge (mm)
+- snowmm      Schneemenge (mm)
+- sunrise     Sonnenaufgang (Unix ms)
+- sunset      Sonnenuntergang (Unix ms)
+- forecast    Temperatur-Forecast (CSV)
+
+Fehlende oder ungültige Werte werden automatisch ersetzt.
 
 ---
 
 ## 🛠 Anpassungen
 
-- Styles: assets/css/main.css
+- Globales Styling: assets/css/main.css
+- Effekte & Animationen: assets/css/app.css
 - Uhr-Logik: assets/js/clock.js
-- Wetter-Logik & Payloads: assets/js/weather.js
 
-Einfach erweiterbar um:
-- weitere Views
+Das Projekt ist modular und leicht erweiterbar:
+- neue Views
 - neue Tiles
 - zusätzliche Payload-Parameter
 
@@ -137,10 +167,10 @@ Einfach erweiterbar um:
 
 ## 🎨 Design-Ziel
 
-- Dark UI, ruhig und hochwertig
-- Gute Lesbarkeit aus Distanz
-- Tablet- & Wanddisplay-tauglich
-- Modular & erweiterbar
+- Dunkles, ruhiges UI
+- Hochwertige Akzente
+- Sehr gute Lesbarkeit aus Distanz
+- Optimiert für Tablets & Wanddisplays
 - Kein Framework, kein Overhead
 
 ---
@@ -154,4 +184,7 @@ MIT License
 ## 🙌 Credits
 
 Icons: Font Awesome  
-Design-Inspiration: iOS-Lockscreen, moderne Tablet-Wetter-Dashboards, Smart-Home-UIs
+Design-Inspiration:
+- iOS-Lockscreen
+- moderne Tablet-Wetter-Dashboards
+- Smart-Home-UI-Konzepte

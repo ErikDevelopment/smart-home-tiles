@@ -7,167 +7,43 @@
 
 <link rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-
 <link rel="stylesheet" href="../assets/css/main.css">
-
-<style>
-/* Layout */
-.weather-layout{
-  display:grid;
-  grid-template-columns: 1.2fr 1fr 0.8fr;
-  gap:32px;
-  padding:32px;
-  max-width:1100px;
-}
-
-/* LEFT */
-.weather-main{
-  display:flex;
-  flex-direction:column;
-  gap:14px;
-}
-
-.temp-big{
-  font-size:72px;
-  font-weight:300;
-}
-
-.condition{
-  font-size:20px;
-  color:var(--muted);
-}
-
-.meta{
-  display:flex;
-  gap:18px;
-  font-size:14px;
-  color:var(--muted);
-}
-
-/* CENTER */
-.weather-icon-big{
-  font-size:120px;
-  color:var(--accent);
-  text-align:center;
-}
-
-/* CHART (fake) */
-.chart{
-  margin-top:20px;
-  height:80px;
-  background:linear-gradient(
-    to right,
-    transparent,
-    rgba(255,255,255,0.1),
-    transparent
-  );
-  border-radius:12px;
-  position:relative;
-}
-
-.chart::after{
-  content:"";
-  position:absolute;
-  inset:0;
-  background:
-    linear-gradient(to right,
-      transparent 0%,
-      rgba(255,255,255,0.3) 50%,
-      transparent 100%);
-  opacity:.4;
-}
-
-/* RIGHT */
-.forecast{
-  display:flex;
-  flex-direction:column;
-  gap:14px;
-}
-
-.day{
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  padding:10px 14px;
-  background:rgba(255,255,255,0.05);
-  border-radius:12px;
-}
-
-.day i{
-  color:var(--accent);
-}
-</style>
 </head>
 
 <body>
+
+<!-- Effekt-Layer -->
+<div id="weather-effects"></div>
 
 <main class="weather-layout">
 
   <!-- LEFT -->
   <section class="weather-main">
-    <div class="temp-big" id="temp">16°</div>
-    <div class="condition" id="condition">Storm with Rain</div>
+    <div class="temp-big" id="temp">--°</div>
+    <div class="condition" id="condition">---</div>
 
     <div class="meta">
-      <div><i class="fa-solid fa-wind"></i> <span id="wind">2.4 km/h</span></div>
-      <div><i class="fa-solid fa-droplet"></i> <span id="humidity">70%</span></div>
+      <div>
+        <i class="fa-solid fa-wind"></i>
+        <span id="wind">-- m/s</span>
+        <i id="windArrow" class="fa-solid fa-location-arrow wind-arrow"></i>
+      </div>
+      <div>
+        <i class="fa-solid fa-droplet"></i>
+        <span id="humidity">--%</span>
+      </div>
     </div>
 
-    <div class="chart"></div>
+    <!-- Temperaturkurve -->
+    <canvas id="tempChart" width="420" height="90"></canvas>
   </section>
 
-    <section class="weather-icon-big">
-
-    <!-- SUNNY -->
-    <svg id="icon-sunny" class="wx-icon hidden" viewBox="0 0 64 64">
-        <circle cx="32" cy="32" r="10" class="sun"/>
-    </svg>
-
-    <!-- CLOUDY -->
-    <svg id="icon-cloudy" class="wx-icon hidden" viewBox="0 0 64 64">
-        <ellipse cx="28" cy="36" rx="18" ry="10" class="cloud"/>
-        <ellipse cx="40" cy="32" rx="14" ry="8" class="cloud"/>
-    </svg>
-
-    <!-- RAIN -->
-    <svg id="icon-rain" class="wx-icon hidden" viewBox="0 0 64 64">
-        <ellipse cx="32" cy="30" rx="20" ry="10" class="cloud"/>
-        <line x1="24" y1="44" x2="24" y2="54" class="rain"/>
-        <line x1="32" y1="44" x2="32" y2="54" class="rain"/>
-        <line x1="40" y1="44" x2="40" y2="54" class="rain"/>
-    </svg>
-
-    <!-- STORM -->
-    <svg id="icon-storm" class="wx-icon hidden" viewBox="0 0 64 64">
-        <ellipse cx="32" cy="30" rx="20" ry="10" class="cloud"/>
-        <polygon points="30,40 38,40 34,52" class="bolt"/>
-    </svg>
-
-    </section>
-
+  <!-- CENTER (frei / Effekte laufen im Hintergrund) -->
+  <section></section>
 
   <!-- RIGHT -->
-  <section class="forecast" id="forecast">
-    <div class="day">
-      <span>Fr</span>
-      <i class="fa-solid fa-cloud-sun"></i>
-      <span>18°</span>
-    </div>
-    <div class="day">
-      <span>Sa</span>
-      <i class="fa-solid fa-cloud-rain"></i>
-      <span>16°</span>
-    </div>
-    <div class="day">
-      <span>So</span>
-      <i class="fa-solid fa-sun"></i>
-      <span>19°</span>
-    </div>
-    <div class="day">
-      <span>Mo</span>
-      <i class="fa-solid fa-cloud"></i>
-      <span>17°</span>
-    </div>
+  <section class="forecast">
+    <div class="day"><span>Heute</span></div>
   </section>
 
 </main>
