@@ -1,33 +1,79 @@
 const p = new URLSearchParams(location.search);
 
-/* ---------- RAW VALUES ---------- */
-const temp = parseFloat(p.get("temp")) || 10;
-const humidity = parseInt(p.get("humidity")) || 70;
-const wind = parseFloat(p.get("wind")) || 2;
-const windDir = parseInt(p.get("winddir")) || 0;
-const clouds = parseInt(p.get("clouds")) || 0;
-const rainmm = parseFloat(p.get("rainmm")) || 0;
-const text = p.get("text") || "Klar";
-const sunrise = parseInt(p.get("sunrise")) || null;
-const sunset = parseInt(p.get("sunset")) || null;
+/* ===============================
+   DEFAULT / DUMMY DATA
+================================ */
+const DUMMY = {
+  temp: 12.5,
+  humidity: 65,
+  wind: 2.3,
+  windDir: 180,
+  clouds: 40,
+  rainmm: 0,
+  text: "Leicht bewölkt",
+  forecast: [10, 11, 12, 13, 12, 11, 10]
+};
 
-/* Forecast: z. B. 9,8,10,12,11 */
-const forecast = (p.get("forecast") || "")
+/* ===============================
+   SAFE PARSE HELPERS
+================================ */
+function num(val, def, min = -Infinity, max = Infinity){
+  const n = Number(val);
+  if (Number.isNaN(n)) return def;
+  if (n < min || n > max) return def;
+  return n;
+}
+
+function str(val, def){
+  if (!val || typeof val !== "string") return def;
+  return val.trim() || def;
+}
+
+/* ===============================
+   RAW VALUES (SAFE)
+================================ */
+const temp     = num(p.get("temp"), DUMMY.temp, -50, 60);
+const humidity = num(p.get("humidity"), DUMMY.humidity, 0, 100);
+const wind     = num(p.get("wind"), DUMMY.wind, 0, 50);
+const windDir  = num(p.get("winddir"), DUMMY.windDir, 0, 360);
+const clouds   = num(p.get("clouds"), DUMMY.clouds, 0, 100);
+const rainmm   = num(p.get("rainmm"), DUMMY.rainmm, 0, 500);
+const text     = str(p.get("text"), DUMMY.text);
+const sunrise  = num(p.get("sunrise"), null);
+const sunset   = num(p.get("sunset"), null);
+
+/* Forecast (CSV → Array) */
+let forecast = (p.get("forecast") || "")
   .split(",")
-  .map(v => parseFloat(v))
-  .filter(v => !isNaN(v));
+  .map(v => Number(v))
+  .filter(v => !Number.isNaN(v));
 
-/* ---------- UI ---------- */
-document.getElementById("temp").textContent = temp.toFixed(1) + "°";
-document.getElementById("condition").textContent = text;
-document.getElementById("humidity").textContent = humidity + "%";
-document.getElementById("wind").textContent = wind.toFixed(1) + " m/s";
+if (forecast.length < 2) {
+  forecast = DUMMY.forecast;
+}
+
+/* ===============================
+   UI UPDATE
+================================ */
+document.getElementById("temp").textContent =
+  temp.toFixed(1) + "°";
+
+document.getElementById("condition").textContent =
+  text;
+
+document.getElementById("humidity").textContent =
+  humidity + "%";
+
+document.getElementById("wind").textContent =
+  wind.toFixed(1) + " m/s";
 
 /* Windrichtung */
 document.getElementById("windArrow").style.transform =
   `rotate(${windDir}deg)`;
 
-/* ---------- NIGHT MODE ---------- */
+/* ===============================
+   NIGHT MODE (SAFE)
+================================ */
 if (sunrise && sunset) {
   const now = Date.now();
   if (now < sunrise || now > sunset) {
@@ -35,17 +81,21 @@ if (sunrise && sunset) {
   }
 }
 
-/* ---------- TEMPERATURE CURVE ---------- */
-if (forecast.length >= 2) drawTempChart(forecast);
+/* ===============================
+   TEMPERATURE CURVE
+================================ */
+drawTempChart(forecast);
 
 function drawTempChart(data){
   const canvas = document.getElementById("tempChart");
-  const ctx = canvas.getContext("2d");
+  if (!canvas) return;
 
+  const ctx = canvas.getContext("2d");
   ctx.clearRect(0,0,canvas.width,canvas.height);
 
   const min = Math.min(...data);
   const max = Math.max(...data);
+  const range = max - min || 1;
 
   ctx.beginPath();
   ctx.strokeStyle = "#d4af37";
@@ -53,41 +103,55 @@ function drawTempChart(data){
 
   data.forEach((t,i)=>{
     const x = (i/(data.length-1))*canvas.width;
-    const y = canvas.height - ((t-min)/(max-min))*canvas.height;
-    if(i===0) ctx.moveTo(x,y);
-    else ctx.lineTo(x,y);
+    const y = canvas.height - ((t-min)/range)*canvas.height;
+    i === 0 ? ctx.moveTo(x,y) : ctx.lineTo(x,y);
   });
 
   ctx.stroke();
 }
 
-/* ---------- WEATHER EFFECTS ---------- */
+/* ===============================
+   WEATHER STATE LOGIC
+================================ */
 let state = "sunny";
 let rainLevel = "normal";
 
-if (text.toLowerCase().includes("thunder")) state = "storm";
+const t = text.toLowerCase();
+
+if (t.includes("thunder")) {
+  state = "storm";
+}
 else if (rainmm > 0) {
   state = "rain";
   if (rainmm > 3) rainLevel = "heavy";
-  if (rainmm < 0.5) rainLevel = "light";
+  else if (rainmm < 0.5) rainLevel = "light";
 }
-else if (clouds > 60) state = "cloudy";
+else if (clouds > 60) {
+  state = "cloudy";
+}
 
+/* ===============================
+   WEATHER EFFECTS
+================================ */
 initEffects(state, rainLevel);
 
-/* ---------- EFFECT FUNCTIONS ---------- */
 function initEffects(state, rainLevel){
   let e = document.getElementById("weather-effects");
+  if (!e) return;
+
   e.innerHTML = "";
 
   if(state === "rain" || state === "storm"){
-    let drops = rainLevel === "heavy" ? 120 :
-                rainLevel === "light" ? 30 : 60;
+    let drops = 60;
+    if (rainLevel === "heavy") drops = 120;
+    if (rainLevel === "light") drops = 30;
+
     for(let i=0;i<drops;i++){
       const d = document.createElement("div");
       d.className = "raindrop";
-      d.style.left = Math.random()*100+"vw";
-      d.style.animationDuration = (0.6+Math.random())+"s";
+      d.style.left = Math.random()*100 + "vw";
+      d.style.animationDuration =
+        (0.6 + Math.random()) + "s";
       e.appendChild(d);
     }
   }
