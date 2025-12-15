@@ -15,39 +15,43 @@
 <!-- Effekt-Layer -->
 <div id="weather-effects"></div>
 
-<main class="weather-layout">
-
-  <!-- LEFT -->
-  <section class="weather-main">
-    <div class="temp-big" id="temp">--°</div>
-    <div class="condition" id="condition">---</div>
-
-    <div class="meta">
-      <div>
-        <i class="fa-solid fa-wind"></i>
-        <span id="wind">-- m/s</span>
-        <i id="windArrow" class="fa-solid fa-location-arrow wind-arrow"></i>
-      </div>
-      <div>
-        <i class="fa-solid fa-droplet"></i>
-        <span id="humidity">--%</span>
-      </div>
+<main class="weather-card">
+    
+    <!-- HEADER -->
+    <div class="weather-header">
+    <div class="temp-block">
+        <div class="temp-big" id="temp">10°</div>
+        <div class="condition" id="condition">Klar</div>
+        <div class="location">Heute</div>
     </div>
 
-    <!-- Temperaturkurve -->
-    <canvas id="tempChart" width="420" height="90"></canvas>
-  </section>
+    <!-- ICON -->
+    <div class="icon-block">
+        <i id="weatherIcon" class="fa-solid fa-sun"></i>
+    </div>
+    </div>
 
-  <!-- CENTER (frei / Effekte laufen im Hintergrund) -->
-  <section></section>
 
-  <!-- RIGHT -->
-  <section class="forecast">
-    <div class="day"><span>Heute</span></div>
-  </section>
+  <!-- CHART -->
+  <canvas id="tempChart" width="360" height="90"></canvas>
+
+  <!-- FOOTER -->
+  <div class="weather-footer">
+    <div class="meta-item">
+      <i class="fa-solid fa-wind"></i>
+      <span id="wind">2.0 m/s</span>
+      <i id="windArrow" class="fa-solid fa-location-arrow wind-arrow"></i>
+    </div>
+
+    <div class="meta-item">
+      <i class="fa-solid fa-droplet"></i>
+      <span id="humidity">70%</span>
+    </div>
+  </div>
 
 </main>
 
+<!-- View-spezifisches JS -->
 <script src="../assets/js/weather.js"></script>
 </body>
 </html>

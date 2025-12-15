@@ -74,10 +74,13 @@ document.getElementById("windArrow").style.transform =
 /* ===============================
    NIGHT MODE (SAFE)
 ================================ */
+let isNight = false;
+
 if (sunrise && sunset) {
   const now = Date.now();
   if (now < sunrise || now > sunset) {
     document.body.classList.add("night");
+    isNight = true;
   }
 }
 
@@ -128,6 +131,24 @@ else if (rainmm > 0) {
 }
 else if (clouds > 60) {
   state = "cloudy";
+}
+
+/* ===============================
+   WEATHER ICON (TOP RIGHT)
+================================ */
+const iconEl = document.getElementById("weatherIcon");
+
+const iconMap = {
+  sunny: isNight ? "fa-moon" : "fa-sun",
+  cloudy: "fa-cloud",
+  rain: "fa-cloud-rain",
+  storm: "fa-cloud-bolt",
+  snow: "fa-snowflake"
+};
+
+if (iconEl) {
+  iconEl.className =
+    "fa-solid " + (iconMap[state] || "fa-cloud");
 }
 
 /* ===============================
