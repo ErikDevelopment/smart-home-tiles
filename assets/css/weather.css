@@ -1,0 +1,204 @@
+
+/* =========================================================
+   WEATHER CARD (iOS STYLE)
+========================================================= */
+.weather-card{
+  width:380px;
+  padding:22px;
+  border-radius:24px;
+  background:transparent;
+  backdrop-filter: none;
+  box-shadow: none;
+  -webkit-backdrop-filter: blur(18px);
+  position:relative;
+  z-index:2;
+}
+
+/* HEADER */
+.weather-header{
+  display:flex;
+  justify-content:space-between;
+  align-items:flex-start;
+}
+
+.temp-big{
+  font-size:56px;
+  font-weight:500;
+  line-height:1;
+}
+
+.condition{
+  margin-top:6px;
+  font-size:16px;
+  color:#ddd;
+}
+
+.location{
+  margin-top:4px;
+  font-size:13px;
+  color:#aaa;
+}
+
+/* =========================================================
+   FOOTER / META
+========================================================= */
+.weather-footer{
+  display:flex;
+  justify-content:space-between;
+  margin-top:6px;
+}
+
+.meta-item{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  font-size:14px;
+  color:#ddd;
+}
+
+/* WIND ARROW */
+.wind-arrow{
+  margin-left:6px;
+  transform-origin:50% 50%;
+  transition:transform .3s ease;
+  color:#4da3ff;
+}
+
+/* ===============================
+   WEATHER ICON (TOP RIGHT)
+================================ */
+.icon-block{
+  font-size:48px;
+  color:#f5c542;
+  opacity:0.95;
+  margin-top:4px;
+}
+
+/* Night = nur Farbwechsel */
+body.night .icon-block{
+  color:#9bbcff;
+}
+
+/* =========================================================
+   TEMPERATURE CURVE
+========================================================= */
+#tempChart{
+  width:100%;
+  margin:16px 0 10px;
+}
+
+/* =========================================================
+   NIGHT MODE (NO BACKGROUND CHANGES!)
+========================================================= */
+body.night{
+  color:#aaa;
+}
+
+/* WICHTIG: immer transparent */
+.weather-card,
+body.night .weather-card{
+  background: transparent !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+/* =========================================================
+   WEATHER EFFECT LAYER (BACKGROUND)
+========================================================= */
+#weather-effects{
+  position:absolute;
+  inset:0;
+  pointer-events:none;
+  overflow:hidden;
+  z-index:0;
+}
+
+/* ---------------- RAIN ---------------- */
+.raindrop{
+  position:absolute;
+  top:-20px;
+  width:2px;
+  height:18px;
+  background:rgba(180,220,255,0.7);
+  animation: rain-fall linear infinite;
+}
+
+@keyframes rain-fall{
+  to{
+    transform: translateY(110vh);
+    opacity:0;
+  }
+}
+
+/* ---------------- LIGHTNING ---------------- */
+.lightning{
+  position:absolute;
+  inset:0;
+  background:white;
+  opacity:0;
+  animation: lightning-flash 4s infinite;
+}
+
+@keyframes lightning-flash{
+  0%,93%,100%{ opacity:0 }
+  94%{ opacity:0.85 }
+  95%{ opacity:0 }
+  96%{ opacity:0.6 }
+  97%{ opacity:0 }
+}
+
+/* ---------------- SUN ---------------- */
+.sun{
+  position:absolute;
+  top:40px;
+  right:60px;
+  width:140px;
+  height:140px;
+  border-radius:50%;
+  background: radial-gradient(circle, #ffd86b, #f5b800);
+  box-shadow: 0 0 80px rgba(255,200,80,0.6);
+  animation: sun-pulse 4s ease-in-out infinite;
+}
+
+@keyframes sun-pulse{
+  0%,100%{ transform:scale(1); }
+  50%{ transform:scale(1.05); }
+}
+
+/* ---------------- CLOUDS ---------------- */
+.cloud{
+  position:absolute;
+  width:200px;
+  height:60px;
+  background:#cfd8dc;
+  border-radius:50px;
+  opacity:.25;
+  animation: cloud-move linear infinite;
+}
+
+.cloud::before,
+.cloud::after{
+  content:"";
+  position:absolute;
+  background:#cfd8dc;
+  border-radius:50%;
+}
+
+.cloud::before{
+  width:90px;
+  height:90px;
+  top:-40px;
+  left:20px;
+}
+
+.cloud::after{
+  width:120px;
+  height:120px;
+  top:-60px;
+  left:80px;
+}
+
+@keyframes cloud-move{
+  from{ transform: translateX(-260px); }
+  to{ transform: translateX(120vw); }
+}

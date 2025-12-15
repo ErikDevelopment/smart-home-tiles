@@ -1,0 +1,73 @@
+/* =========================================================
+   CALENDAR VIEW
+========================================================= */
+.calendar-view{
+  display:flex;
+  flex-direction:column;
+  gap:14px;
+}
+
+/* =========================================================
+   EVENT TILE
+========================================================= */
+.event-tile{
+  display:flex;
+  gap:14px;
+  padding:16px 18px;
+  border-radius:18px;
+
+  /* leichtes Abheben */
+  background: rgba(255,255,255,0.04);
+  backdrop-filter: blur(6px);
+
+  position:relative;
+}
+
+/* Akzent-Leiste links */
+.event-tile::before{
+  content:"";
+  position:absolute;
+  left:0;
+  top:12px;
+  bottom:12px;
+  width:4px;
+  border-radius:4px;
+  background: var(--accent);
+  opacity:0.8;
+}
+
+/* =========================================================
+   EVENT CONTENT
+========================================================= */
+.event-icon{
+  font-size:20px;
+  margin-top:2px;
+  color:var(--accent);
+}
+
+.event-content{
+  display:flex;
+  flex-direction:column;
+}
+
+.event-title{
+  font-size:16px;
+  font-weight:500;
+}
+
+.event-time{
+  margin-top:4px;
+  font-size:13px;
+  color:var(--muted);
+}
+
+/* =========================================================
+   EVENT TYPES
+========================================================= */
+.event-private{
+  --accent:#4da3ff;
+}
+
+.event-work{
+  --accent:#f5c542;
+}
