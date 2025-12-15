@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lockscreen</title>
+
+<!-- Icons -->
+<link rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+<style>
+:root{
+  --bg:#0b0c10;
+  --fg:#ffffff;
+  --muted:#a0a4aa;
+  --accent:#4da3ff;
+}
+html,body{
+  height:100%;
+  margin:0;
+}
+body{
+  background:linear-gradient(180deg,#0b0c10,#000);
+  color:var(--fg);
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial;
+  display:flex;
+  align-items:flex-start;
+  justify-content:center;
+}
+.card{
+  padding:28px;
+  width:min(420px,100%);
+  animation:fadeIn .8s ease;
+}
+@keyframes fadeIn{
+  from{opacity:0;transform:translateY(10px)}
+  to{opacity:1;transform:none}
+}
+.time{
+  font-size:64px;
+  font-weight:300;
+  letter-spacing:1px;
+}
+.date{
+  margin-top:6px;
+  font-size:17px;
+  color:var(--muted);
+}
+.greeting{
+  margin-top:18px;
+  font-size:22px;
+  display:flex;
+  align-items:center;
+  gap:10px;
+}
+.period{
+  margin-top:6px;
+  font-size:14px;
+  color:var(--muted);
+}
+.icon{
+  font-size:22px;
+  color:var(--accent);
+}
+</style>
+</head>
+
+<body>
+<main class="card">
+  <div class="time" id="time">--:--</div>
+  <div class="date" id="date">--</div>
+
+  <div class="greeting">
+    <i id="icon" class="fa-solid fa-sun icon"></i>
+    <span id="greeting">Hallo</span>
+  </div>
+
+  <div class="period" id="period"></div>
+</main>
+
+<script>
+function update(){
+  const now = new Date();
+
+  // Uhrzeit
+  const hh = String(now.getHours()).padStart(2,"0");
+  const mm = String(now.getMinutes()).padStart(2,"0");
+  document.getElementById("time").textContent = `${hh}:${mm}`;
+
+  // Datum
+  const weekday = now.toLocaleDateString("de-DE",{weekday:"long"});
+  const date = now.toLocaleDateString("de-DE",{day:"2-digit",month:"long"});
+  document.getElementById("date").textContent =
+    weekday.charAt(0).toUpperCase()+weekday.slice(1)+", "+date;
+
+  // Tageszeit
+  const h = now.getHours();
+  let greeting, period, icon;
+
+  if(h < 5){
+    greeting = "Gute Nacht";
+    period = "Nacht";
+    icon = "fa-moon";
+  } else if(h < 11){
+    greeting = "Guten Morgen";
+    period = "Morgen";
+    icon = "fa-sunrise";
+  } else if(h < 17){
+    greeting = "Guten Tag";
+    period = "Tag";
+    icon = "fa-sun";
+  } else if(h < 22){
+    greeting = "Guten Abend";
+    period = "Abend";
+    icon = "fa-cloud-sun";
+  } else {
+    greeting = "Gute Nacht";
+    period = "Nacht";
+    icon = "fa-moon";
+  }
+
+  document.getElementById("greeting").textContent = greeting;
+  document.getElementById("period").textContent = "Tageszeit: "+period;
+
+  const iconEl = document.getElementById("icon");
+  iconEl.className = "fa-solid "+icon+" icon";
+}
+
+update();
+setInterval(update, 1000);
+</script>
+</body>
+</html>
