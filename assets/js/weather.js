@@ -1,3 +1,7 @@
+/* ======================================================
+   WEATHER DASHBOARD – STABLE VERSION (NO FLICKER)
+====================================================== */
+
 const p = new URLSearchParams(location.search);
 
 /* ===============================
@@ -42,40 +46,28 @@ const text     = str(p.get("text"), DUMMY.text);
 const sunrise  = num(p.get("sunrise"), null);
 const sunset   = num(p.get("sunset"), null);
 
-/* Forecast (CSV → Array) */
+/* Forecast */
 let forecast = (p.get("forecast") || "")
   .split(",")
-  .map(v => Number(v))
+  .map(Number)
   .filter(v => !Number.isNaN(v));
 
-if (forecast.length < 2) {
-  forecast = DUMMY.forecast;
-}
+if (forecast.length < 2) forecast = DUMMY.forecast;
 
 /* ===============================
    UI UPDATE
 ================================ */
-document.getElementById("temp").textContent =
-  temp.toFixed(1) + "°";
-
-document.getElementById("condition").textContent =
-  text;
-
-document.getElementById("humidity").textContent =
-  humidity + "%";
-
-document.getElementById("wind").textContent =
-  wind.toFixed(1) + " m/s";
-
-/* Windrichtung */
+document.getElementById("temp").textContent = temp.toFixed(1) + "°";
+document.getElementById("condition").textContent = text;
+document.getElementById("humidity").textContent = humidity + "%";
+document.getElementById("wind").textContent = wind.toFixed(1) + " m/s";
 document.getElementById("windArrow").style.transform =
   `rotate(${windDir}deg)`;
 
 /* ===============================
-   NIGHT MODE (SAFE)
+   NIGHT MODE
 ================================ */
 let isNight = false;
-
 if (sunrise && sunset) {
   const now = Date.now();
   if (now < sunrise || now > sunset) {
@@ -114,7 +106,7 @@ function drawTempChart(data){
 }
 
 /* ===============================
-   WEATHER STATE LOGIC
+   WEATHER STATE
 ================================ */
 let state = "sunny";
 let rainLevel = "normal";
@@ -123,13 +115,10 @@ const t = text.toLowerCase();
 
 if (t.includes("thunder")) {
   state = "storm";
-}
-else if (rainmm > 0) {
+} else if (rainmm > 0) {
   state = "rain";
-  if (rainmm > 3) rainLevel = "heavy";
-  else if (rainmm < 0.5) rainLevel = "light";
-}
-else if (clouds > 60) {
+  rainLevel = rainmm > 3 ? "heavy" : rainmm < 0.5 ? "light" : "normal";
+} else if (clouds > 60) {
   state = "cloudy";
 }
 
@@ -147,37 +136,34 @@ const iconMap = {
 };
 
 if (iconEl) {
-  iconEl.className =
-    "fa-solid " + (iconMap[state] || "fa-cloud");
+  iconEl.className = "fa-solid " + (iconMap[state] || "fa-cloud");
 }
 
 /* ===============================
-   WEATHER EFFECTS
+   WEATHER EFFECTS (INIT ONCE)
 ================================ */
-initEffects(state, rainLevel);
+let effectsInitialized = false;
+initEffectsOnce(state, rainLevel);
 
-function initEffects(state, rainLevel){
-  let e = document.getElementById("weather-effects");
-  if (!e) return;
+function initEffectsOnce(state, rainLevel){
+  const e = document.getElementById("weather-effects");
+  if (!e || effectsInitialized) return;
+  effectsInitialized = true;
 
-  e.innerHTML = "";
-
-  if(state === "rain" || state === "storm"){
-    let drops = 60;
-    if (rainLevel === "heavy") drops = 120;
-    if (rainLevel === "light") drops = 30;
+  if (state === "rain" || state === "storm") {
+    let drops = rainLevel === "heavy" ? 120 :
+                rainLevel === "light" ? 30 : 60;
 
     for(let i=0;i<drops;i++){
       const d = document.createElement("div");
       d.className = "raindrop";
       d.style.left = Math.random()*100 + "vw";
-      d.style.animationDuration =
-        (0.6 + Math.random()) + "s";
+      d.style.animationDuration = (0.8 + Math.random()) + "s";
       e.appendChild(d);
     }
   }
 
-  if(state === "storm"){
+  if (state === "storm") {
     const f = document.createElement("div");
     f.className = "lightning";
     e.appendChild(f);
