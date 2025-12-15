@@ -19,6 +19,33 @@ const DUMMY = {
 };
 
 /* ===============================
+   WEATHER TEXT TRANSLATION
+================================ */
+function translateWeatherText(raw){
+  if (!raw) return "Unbekannt";
+
+  const t = raw.toLowerCase();
+
+  if (t.includes("clear")) return "Freier Himmel";
+  if (t.includes("few clouds")) return "Leicht bewölkt";
+  if (t.includes("scattered clouds")) return "Aufgelockert bewölkt";
+  if (t.includes("broken clouds")) return "Stark bewölkt";
+  if (t.includes("cloud")) return "Bewölkt";
+
+  if (t.includes("drizzle")) return "Nieselregen";
+  if (t.includes("light rain")) return "Leichter Regen";
+  if (t.includes("rain")) return "Regen";
+  if (t.includes("shower")) return "Regenschauer";
+
+  if (t.includes("thunder")) return "Gewitter";
+  if (t.includes("snow")) return "Schnee";
+  if (t.includes("fog") || t.includes("mist")) return "Nebel";
+
+  return raw; // Fallback: Originaltext
+}
+
+
+/* ===============================
    SAFE PARSE HELPERS
 ================================ */
 function num(val, def, min = -Infinity, max = Infinity){
@@ -58,7 +85,8 @@ if (forecast.length < 2) forecast = DUMMY.forecast;
    UI UPDATE
 ================================ */
 document.getElementById("temp").textContent = temp.toFixed(1) + "°";
-document.getElementById("condition").textContent = text;
+document.getElementById("condition").textContent =
+  translateWeatherText(text);
 document.getElementById("humidity").textContent = humidity + "%";
 document.getElementById("wind").textContent = wind.toFixed(1) + " m/s";
 document.getElementById("windArrow").style.transform =

@@ -132,6 +132,7 @@ body{
   margin-top:4px;
 }
 
+/* Night = nur Farbwechsel */
 body.night .icon-block{
   color:#9bbcff;
 }
@@ -145,14 +146,18 @@ body.night .icon-block{
 }
 
 /* =========================================================
-   NIGHT MODE
+   NIGHT MODE (NO BACKGROUND CHANGES!)
 ========================================================= */
-body.night .weather-card{
-  background:rgba(20,20,24,0.55);
-}
-
 body.night{
   color:#aaa;
+}
+
+/* WICHTIG: immer transparent */
+.weather-card,
+body.night .weather-card{
+  background: transparent !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
 }
 
 /* =========================================================
