@@ -1,0 +1,405 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Flip Clock</title>
+    <meta
+      name="description"
+      content="Minimalistische Fliqlo-inspirierte Flip Clock für Smart-Home-Displays, Raspberry Pi und Fernseher."
+    />
+    <meta name="theme-color" content="#000000" />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap"
+    />
+
+    <style>
+      /* -----------------------------------------------------------------
+         Fliqlo-inspired flip clock
+         Pure HTML/CSS/JS — no build step, no dependencies.
+         ----------------------------------------------------------------- */
+
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        height: 100%;
+        background: #000;
+        overflow: hidden;
+      }
+
+      .fliq-root {
+        --card-bg-top: #1a1a1a;
+        --card-bg-bottom: #141414;
+        --card-fg: #f5f5f5;
+        --card-divider: rgba(0, 0, 0, 0.55);
+        --card-radius: clamp(8px, 1.2vmin, 18px);
+        --gap: clamp(6px, 1.2vmin, 18px);
+        --group-gap: clamp(14px, 3vmin, 48px);
+        --digit-w: clamp(90px, 22vmin, 340px);
+        --digit-h: clamp(140px, 34vmin, 520px);
+        --digit-font: clamp(110px, 30vmin, 460px);
+
+        position: fixed;
+        inset: 0;
+        background: #000;
+        color: var(--card-fg);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: clamp(20px, 4vmin, 56px);
+        font-family: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+        font-variant-numeric: tabular-nums;
+        -webkit-font-smoothing: antialiased;
+        user-select: none;
+      }
+
+      .fliq-clock {
+        display: flex;
+        align-items: center;
+        gap: var(--group-gap);
+        perspective: 1200px;
+      }
+
+      .fliq-group {
+        display: flex;
+        gap: var(--gap);
+      }
+
+      .fliq-colon {
+        font-size: clamp(48px, 12vmin, 200px);
+        font-weight: 700;
+        line-height: 0.8;
+        color: var(--card-fg);
+        transform: translateY(-6%);
+        animation: fliq-blink 1.1s steps(1, end) infinite;
+        letter-spacing: -0.05em;
+      }
+
+      @keyframes fliq-blink {
+        0%,
+        49% {
+          opacity: 1;
+        }
+        50%,
+        100% {
+          opacity: 0.15;
+        }
+      }
+
+      .fliq-digit {
+        position: relative;
+        width: var(--digit-w);
+        height: var(--digit-h);
+        border-radius: var(--card-radius);
+        transform: translateZ(0);
+        filter: drop-shadow(
+          0 clamp(6px, 1.4vmin, 18px) clamp(10px, 2.4vmin, 30px) rgba(0, 0, 0, 0.55)
+        );
+      }
+
+      .fliq-half {
+        position: absolute;
+        left: 0;
+        right: 0;
+        height: 50%;
+        overflow: hidden;
+        backface-visibility: hidden;
+        -webkit-backface-visibility: hidden;
+      }
+
+      .fliq-half.top {
+        top: 0;
+        border-radius: var(--card-radius) var(--card-radius) 0 0;
+        background: linear-gradient(180deg, #1f1f1f 0%, var(--card-bg-top) 100%);
+        border-bottom: 1px solid var(--card-divider);
+        transform-origin: bottom center;
+      }
+
+      .fliq-half.bottom {
+        bottom: 0;
+        border-radius: 0 0 var(--card-radius) var(--card-radius);
+        background: linear-gradient(180deg, var(--card-bg-bottom) 0%, #0d0d0d 100%);
+        transform-origin: top center;
+      }
+
+      .fliq-num {
+        position: absolute;
+        left: 0;
+        right: 0;
+        height: var(--digit-h);
+        font-size: var(--digit-font);
+        font-weight: 700;
+        line-height: var(--digit-h);
+        letter-spacing: -0.04em;
+        color: var(--card-fg);
+        text-align: center;
+      }
+
+      .fliq-half.top .fliq-num {
+        top: 0;
+      }
+
+      .fliq-half.bottom .fliq-num {
+        bottom: 0;
+      }
+
+      /* Flipping halves stack on top of the static ones */
+      .fliq-half.flip {
+        will-change: transform;
+        z-index: 2;
+        box-shadow: 0 0 clamp(6px, 1vmin, 14px) rgba(0, 0, 0, 0.4);
+      }
+
+      .fliq-half.flip.top {
+        animation: fliq-flip-top 600ms cubic-bezier(0.36, 0, 0.66, -0.05) forwards;
+      }
+
+      .fliq-half.flip.bottom {
+        animation: fliq-flip-bottom 600ms cubic-bezier(0.34, 1.4, 0.64, 1) forwards;
+        animation-delay: 300ms;
+        transform: rotateX(90deg);
+      }
+
+      @keyframes fliq-flip-top {
+        0% {
+          transform: rotateX(0deg);
+        }
+        100% {
+          transform: rotateX(-90deg);
+        }
+      }
+
+      @keyframes fliq-flip-bottom {
+        0% {
+          transform: rotateX(90deg);
+        }
+        100% {
+          transform: rotateX(0deg);
+        }
+      }
+
+      .fliq-shade {
+        position: absolute;
+        left: 0;
+        right: 0;
+        height: 50%;
+        pointer-events: none;
+        z-index: 3;
+        opacity: 0;
+      }
+
+      .fliq-shade.top {
+        top: 0;
+        background: linear-gradient(180deg, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 0.65) 100%);
+        border-radius: var(--card-radius) var(--card-radius) 0 0;
+        animation: fliq-shade-top 600ms ease-out forwards;
+      }
+
+      .fliq-shade.bottom {
+        bottom: 0;
+        background: linear-gradient(180deg, rgba(0, 0, 0, 0.65) 0%, rgba(0, 0, 0, 0) 100%);
+        border-radius: 0 0 var(--card-radius) var(--card-radius);
+        animation: fliq-shade-bottom 600ms ease-in forwards;
+        animation-delay: 300ms;
+      }
+
+      @keyframes fliq-shade-top {
+        0% {
+          opacity: 0;
+        }
+        100% {
+          opacity: 0.8;
+        }
+      }
+
+      @keyframes fliq-shade-bottom {
+        0% {
+          opacity: 0.8;
+        }
+        100% {
+          opacity: 0;
+        }
+      }
+
+      .fliq-date {
+        font-size: clamp(14px, 2.2vmin, 32px);
+        font-weight: 400;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: rgba(245, 245, 245, 0.55);
+      }
+    </style>
+  </head>
+  <body>
+    <main class="fliq-root" aria-label="Flip Clock">
+      <div class="fliq-clock" id="clock" aria-hidden="true">
+        <div class="fliq-group" data-group="hours">
+          <div class="fliq-digit" data-digit="h1"></div>
+          <div class="fliq-digit" data-digit="h2"></div>
+        </div>
+        <span class="fliq-colon">:</span>
+        <div class="fliq-group" data-group="minutes">
+          <div class="fliq-digit" data-digit="m1"></div>
+          <div class="fliq-digit" data-digit="m2"></div>
+        </div>
+        <!-- Seconds are rendered by JS when SHOW_SECONDS is enabled -->
+      </div>
+      <div class="fliq-date" id="date"></div>
+    </main>
+
+    <script>
+      (function () {
+        "use strict";
+
+        // ---------------------------------------------------------------
+        // Config
+        // ---------------------------------------------------------------
+        var SHOW_SECONDS = false; // toggle to add seconds
+        var LOCALE = "de-DE";
+
+        // ---------------------------------------------------------------
+        // Optionally add a seconds group
+        // ---------------------------------------------------------------
+        if (SHOW_SECONDS) {
+          var clock = document.getElementById("clock");
+          var colon = document.createElement("span");
+          colon.className = "fliq-colon";
+          colon.textContent = ":";
+          var group = document.createElement("div");
+          group.className = "fliq-group";
+          group.setAttribute("data-group", "seconds");
+          group.innerHTML =
+            '<div class="fliq-digit" data-digit="s1"></div>' +
+            '<div class="fliq-digit" data-digit="s2"></div>';
+          clock.appendChild(colon);
+          clock.appendChild(group);
+        }
+
+        // ---------------------------------------------------------------
+        // FlipDigit — controls a single card, only animating on change
+        // ---------------------------------------------------------------
+        function createFlipDigit(el) {
+          var current = null;
+
+          function halfHTML(side, value) {
+            return (
+              '<div class="fliq-half ' +
+              side +
+              '"><span class="fliq-num">' +
+              value +
+              "</span></div>"
+            );
+          }
+
+          function render(value) {
+            el.innerHTML = halfHTML("top", value) + halfHTML("bottom", value);
+          }
+
+          function flipTo(next) {
+            if (next === current) return;
+            var prev = current == null ? next : current;
+            current = next;
+
+            // Static base: top shows NEW, bottom shows OLD until animation ends
+            el.innerHTML =
+              halfHTML("top", next) +
+              halfHTML("bottom", prev) +
+              '<div class="fliq-half flip top"><span class="fliq-num">' +
+              prev +
+              "</span></div>" +
+              '<div class="fliq-half flip bottom"><span class="fliq-num">' +
+              next +
+              "</span></div>" +
+              '<div class="fliq-shade top"></div>' +
+              '<div class="fliq-shade bottom"></div>';
+
+            // After the flip completes, settle to the final static state
+            window.setTimeout(function () {
+              el.innerHTML = halfHTML("top", next) + halfHTML("bottom", next);
+            }, 640);
+          }
+
+          return {
+            set: function (value) {
+              if (current === null) {
+                current = value;
+                render(value);
+              } else {
+                flipTo(value);
+              }
+            },
+          };
+        }
+
+        // ---------------------------------------------------------------
+        // Wire up digits
+        // ---------------------------------------------------------------
+        var digits = {
+          h1: createFlipDigit(document.querySelector('[data-digit="h1"]')),
+          h2: createFlipDigit(document.querySelector('[data-digit="h2"]')),
+          m1: createFlipDigit(document.querySelector('[data-digit="m1"]')),
+          m2: createFlipDigit(document.querySelector('[data-digit="m2"]')),
+        };
+        if (SHOW_SECONDS) {
+          digits.s1 = createFlipDigit(document.querySelector('[data-digit="s1"]'));
+          digits.s2 = createFlipDigit(document.querySelector('[data-digit="s2"]'));
+        }
+
+        var dateEl = document.getElementById("date");
+        var dateFormatter = new Intl.DateTimeFormat(LOCALE, {
+          weekday: "long",
+          day: "numeric",
+          month: "long",
+          year: "numeric",
+        });
+        var lastDateKey = "";
+
+        function pad2(n) {
+          return n < 10 ? "0" + n : "" + n;
+        }
+
+        function tick() {
+          var now = new Date();
+          var hh = pad2(now.getHours());
+          var mm = pad2(now.getMinutes());
+          var ss = pad2(now.getSeconds());
+
+          digits.h1.set(hh.charAt(0));
+          digits.h2.set(hh.charAt(1));
+          digits.m1.set(mm.charAt(0));
+          digits.m2.set(mm.charAt(1));
+          if (SHOW_SECONDS) {
+            digits.s1.set(ss.charAt(0));
+            digits.s2.set(ss.charAt(1));
+          }
+
+          var dateKey = now.toDateString();
+          if (dateKey !== lastDateKey) {
+            lastDateKey = dateKey;
+            dateEl.textContent = dateFormatter.format(now);
+          }
+        }
+
+        // Align to the next full second, then tick every second
+        tick();
+        var msToNext = 1000 - (Date.now() % 1000);
+        window.setTimeout(function () {
+          tick();
+          window.setInterval(tick, 1000);
+        }, msToNext);
+      })();
+    </script>
+  </body>
+</html>
