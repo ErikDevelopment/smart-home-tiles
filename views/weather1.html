@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Premium Weather Tile</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #0B0B0B;
+            --card-color: #171717;
+            --text-primary: #FFFFFF;
+            --text-secondary: #B5B5B5;
+            --divider-color: rgba(255, 255, 255, 0.08);
+            --border-color: rgba(255, 255, 255, 0.04);
+        }
+
+        body, html {
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+            font-family: 'Inter', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overflow: hidden; /* Keine Scrollbalken */
+        }
+
+        /* Container mit dynamischer Skalierung */
+        .tile-container {
+            width: 100%;
+            max-width: 320px; /* Basisbreite für ca. 300x170 Ratio */
+            padding: 16px;
+            box-sizing: border-box;
+            container-type: inline-size;
+        }
+
+        /* Hauptkarte */
+        .weather-card {
+            background-color: var(--card-color);
+            border-radius: 22px;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255,255,255,0.05);
+            padding: 20px 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            
+            /* Animation */
+            opacity: 0;
+            transform: translateY(10px);
+            animation: fadeSlideUp 250ms ease-out forwards;
+        }
+
+        @keyframes fadeSlideUp {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Oberer Bereich */
+        .top-section {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .icon-container {
+            width: 80px;
+            height: 80px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-shrink: 0;
+        }
+
+        .icon-container svg {
+            width: 100%;
+            height: 100%;
+            filter: drop-shadow(0 4px 6px rgba(0,0,0,0.4));
+        }
+
+        .info-container {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            text-align: right;
+            justify-content: center;
+        }
+
+        .city {
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--text-secondary);
+            margin-bottom: 2px;
+        }
+
+        .temperature {
+            font-size: 56px;
+            font-weight: 500;
+            line-height: 1;
+            letter-spacing: -0.03em;
+            margin: 2px 0;
+        }
+
+        .description {
+            font-size: 15px;
+            font-weight: 400;
+            color: var(--text-secondary);
+            margin-top: 4px;
+        }
+
+        /* Trennlinie */
+        .divider {
+            width: 100%;
+            height: 1px;
+            background-color: var(--divider-color);
+            border: none;
+            margin: 0;
+        }
+
+        /* Unterer Bereich */
+        .bottom-section {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-top: 4px;
+        }
+
+        .metric {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .metric svg {
+            width: 16px;
+            height: 16px;
+            fill: none;
+            stroke: var(--text-secondary);
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        .metric-divider {
+            width: 1px;
+            height: 16px;
+            background-color: var(--divider-color);
+        }
+
+        /* Responsives Feintuning für Kiosk/Displays */
+        @container (min-width: 400px) {
+            .weather-card { padding: 24px 30px; gap: 20px; }
+            .temperature { font-size: 64px; }
+            .description { font-size: 18px; }
+            .city { font-size: 14px; }
+            .metric { font-size: 15px; }
+            .icon-container { width: 100px; height: 100px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="tile-container">
+    <div class="weather-card">
+        <div class="top-section">
+            <div class="icon-container" id="weather-icon">
+                <!-- Icon wird per JS injiziert -->
+            </div>
+            <div class="info-container">
+                <div class="city" id="city">Lade...</div>
+                <div class="temperature" id="temp">--°</div>
+                <div class="description" id="desc">--</div>
+            </div>
+        </div>
+        
+        <hr class="divider">
+        
+        <div class="bottom-section">
+            <div class="metric">
+                <svg viewBox="0 0 24 24"><path d="M14 14.76V3.5a2.5 2.5 0 0 0-5 0v11.26a4.5 4.5 0 1 0 5 0z"></path></svg>
+                <span id="minmax">--° / --°</span>
+            </div>
+            <div class="metric-divider"></div>
+            <div class="metric">
+                <svg viewBox="0 0 24 24"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"></path></svg>
+                <span id="humidity">-- %</span>
+            </div>
+            <div class="metric-divider"></div>
+            <div class="metric">
+                <svg viewBox="0 0 24 24"><path d="M9.59 4.59A2 2 0 1 1 11 8H2m10.59 11.41A2 2 0 1 0 14 16H2m15.73-8.27A2.5 2.5 0 1 1 19.5 12H2"></path></svg>
+                <span id="wind">-- km/h</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Premium SVG Icons Katalog
+    const weatherIcons = {
+        'clear-day': `<svg viewBox="0 0 64 64"><circle cx="32" cy="32" r="14" fill="#FFC000"/><g stroke="#FFC000" stroke-width="3" stroke-linecap="round"><line x1="32" y1="6" x2="32" y2="12"/><line x1="32" y1="52" x2="32" y2="58"/><line x1="6" y1="32" x2="12" y2="32"/><line x1="52" y1="32" x2="58" y2="32"/><line x1="13.6" y1="13.6" x2="17.8" y2="17.8"/><line x1="46.2" y1="46.2" x2="50.4" y2="50.4"/><line x1="13.6" y1="50.4" x2="17.8" y2="46.2"/><line x1="46.2" y1="17.8" x2="50.4" y2="13.6"/></g></svg>`,
+        'clear-night': `<svg viewBox="0 0 64 64"><path d="M38.5,46.2A18,18,0,1,1,46.2,17.8,20,20,0,0,0,38.5,46.2Z" fill="#A4B1C6"/></svg>`,
+        'partly-cloudy-day': `<svg viewBox="0 0 64 64"><defs><linearGradient id="cloudGrad" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stop-color="#FFFFFF"/><stop offset="100%" stop-color="#D4D4D4"/></linearGradient></defs><circle cx="24" cy="24" r="10" fill="#FFC000"/><g stroke="#FFC000" stroke-width="2.5" stroke-linecap="round"><line x1="24" y1="6" x2="24" y2="10"/><line x1="6" y1="24" x2="10" y2="24"/><line x1="11.3" y1="11.3" x2="14.1" y2="14.1"/><line x1="36.7" y1="11.3" x2="33.9" y2="14.1"/></g><path d="M46,44H18a8,8,0,0,1-1-15.9,12,12,0,0,1,23.6-2.6A8,8,0,0,1,46,44Z" fill="url(#cloudGrad)"/></svg>`,
+        'partly-cloudy-night': `<svg viewBox="0 0 64 64"><defs><linearGradient id="cloudGrad2" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stop-color="#FFFFFF"/><stop offset="100%" stop-color="#999999"/></linearGradient></defs><path d="M29.5,33.2A11,11,0,1,1,34.2,15.8,12,12,0,0,0,29.5,33.2Z" fill="#A4B1C6"/><path d="M48,46H20a8,8,0,0,1-1-15.9,12,12,0,0,1,23.6-2.6A8,8,0,0,1,48,46Z" fill="url(#cloudGrad2)"/></svg>`,
+        'cloudy': `<svg viewBox="0 0 64 64"><defs><linearGradient id="cloudGrad3" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stop-color="#FFFFFF"/><stop offset="100%" stop-color="#D4D4D4"/></linearGradient></defs><path d="M48,42H18a9,9,0,0,1-1.2-17.9,13,13,0,0,1,25.4-2.8A9,9,0,0,1,48,42Z" fill="url(#cloudGrad3)"/></svg>`,
+        'overcast': `<svg viewBox="0 0 64 64"><defs><linearGradient id="cloudGrad4" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stop-color="#E0E0E0"/><stop offset="100%" stop-color="#888888"/></linearGradient></defs><path d="M48,36H18a9,9,0,0,1-1.2-17.9,13,13,0,0,1,25.4-2.8A9,9,0,0,1,48,36Z" fill="url(#cloudGrad4)"/><path d="M50,48H14a7,7,0,0,1-1-13.9,11,11,0,0,1,21.6-1.5A7,7,0,0,1,50,48Z" fill="url(#cloudGrad4)" opacity="0.8"/></svg>`,
+        'rain': `<svg viewBox="0 0 64 64"><defs><linearGradient id="cloudGrad5" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stop-color="#D4D4D4"/><stop offset="100%" stop-color="#999999"/></linearGradient></defs><path d="M46,38H18a8,8,0,0,1-1-15.9,12,12,0,0,1,23.6-2.6A8,8,0,0,1,46,38Z" fill="url(#cloudGrad5)"/><g stroke="#4CA0E0" stroke-width="2.5" stroke-linecap="round"><line x1="24" y1="44" x2="21" y2="52"/><line x1="32" y1="44" x2="29" y2="52"/><line x1="40" y1="44" x2="37" y2="52"/></g></svg>`,
+        'snow': `<svg viewBox="0 0 64 64"><defs><linearGradient id="cloudGrad6" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stop-color="#FFFFFF"/><stop offset="100%" stop-color="#E0E0E0"/></linearGradient></defs><path d="M46,38H18a8,8,0,0,1-1-15.9,12,12,0,0,1,23.6-2.6A8,8,0,0,1,46,38Z" fill="url(#cloudGrad6)"/><g fill="#FFFFFF"><circle cx="24" cy="48" r="2.5"/><circle cx="32" cy="45" r="2.5"/><circle cx="40" cy="48" r="2.5"/></g></svg>`,
+        'thunderstorm': `<svg viewBox="0 0 64 64"><defs><linearGradient id="cloudGrad7" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stop-color="#888888"/><stop offset="100%" stop-color="#555555"/></linearGradient></defs><path d="M46,38H18a8,8,0,0,1-1-15.9,12,12,0,0,1,23.6-2.6A8,8,0,0,1,46,38Z" fill="url(#cloudGrad7)"/><path d="M30,38 L24,50 L32,50 L30,60 L40,46 L32,46 Z" fill="#FFC000"/></svg>`,
+        'fog': `<svg viewBox="0 0 64 64"><defs><linearGradient id="cloudGrad8" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stop-color="#D4D4D4"/><stop offset="100%" stop-color="#AAAAAA"/></linearGradient></defs><path d="M46,32H18a8,8,0,0,1-1-15.9,12,12,0,0,1,23.6-2.6A8,8,0,0,1,46,32Z" fill="url(#cloudGrad8)"/><g stroke="#D4D4D4" stroke-width="2.5" stroke-linecap="round"><line x1="20" y1="42" x2="44" y2="42"/><line x1="16" y1="48" x2="48" y2="48"/><line x1="22" y1="54" x2="42" y2="54"/></g></svg>`
+    };
+
+    function initWeather() {
+        const params = new URLSearchParams(window.location.search);
+        
+        // Defaults für Demo-Zwecke (entspricht ca. Referenzbild)
+        const city = params.get('city') || 'FRANKFURT AM MAIN';
+        const temp = params.get('temp') || '23';
+        const humidity = params.get('humidity') || '42';
+        const wind = params.get('wind') || '8';
+        const text = params.get('text') || 'Teilweise bewölkt';
+        const sunrise = params.get('sunrise') || '06:00';
+        const sunset = params.get('sunset') || '21:30';
+        const clouds = parseInt(params.get('clouds') || '30', 10);
+        const rainmm = parseFloat(params.get('rainmm') || '0');
+        
+        // DOM Updates Text
+        document.getElementById('city').textContent = city;
+        document.getElementById('temp').textContent = `${Math.round(parseFloat(temp))}°`;
+        document.getElementById('desc').textContent = text;
+        document.getElementById('humidity').textContent = `${humidity} %`;
+        document.getElementById('wind').textContent = `${wind} km/h`;
+
+        // Min/Max Approximation, falls keine separaten Werte geliefert werden
+        let tempVal = parseFloat(temp);
+        let minT = Math.round(tempVal - 5);
+        let maxT = Math.round(tempVal + 2);
+        document.getElementById('minmax').textContent = `${maxT}° / ${minT}°`;
+
+        // Tageszeit Berechnen
+        const now = new Date();
+        const currentMins = now.getHours() * 60 + now.getMinutes();
+        const parseTime = (timeStr) => {
+            const [h, m] = timeStr.split(':').map(Number);
+            return (h * 60) + (m || 0);
+        };
+        const isDay = (currentMins >= parseTime(sunrise) && currentMins < parseTime(sunset));
+
+        // Wetterzustand & Icon Logik
+        let condition = text.toLowerCase();
+        let iconKey = 'partly-cloudy-day'; // Fallback
+
+        if (condition.includes('regen') || rainmm > 0.5) iconKey = 'rain';
+        else if (condition.includes('schnee')) iconKey = 'snow';
+        else if (condition.includes('gewitter') || condition.includes('sturm')) iconKey = 'thunderstorm';
+        else if (condition.includes('nebel')) iconKey = 'fog';
+        else if (condition.includes('bedeckt') || clouds > 80) iconKey = 'overcast';
+        else if (condition.includes('bewölkt') || condition.includes('wolkig') || (clouds > 20 && clouds <= 80)) {
+            iconKey = isDay ? 'partly-cloudy-day' : 'partly-cloudy-night';
+            if (clouds > 60) iconKey = 'cloudy'; 
+        }
+        else if (condition.includes('klar') && !isDay) iconKey = 'clear-night';
+        else if (condition.includes('sonn') || clouds <= 20) iconKey = isDay ? 'clear-day' : 'clear-night';
+        else iconKey = isDay ? 'clear-day' : 'clear-night';
+
+        // Icon ins DOM injizieren
+        const iconElement = document.getElementById('weather-icon');
+        iconElement.innerHTML = weatherIcons[iconKey] || weatherIcons['partly-cloudy-day'];
+    }
+
+    // Initialisierung beim Laden
+    document.addEventListener("DOMContentLoaded", initWeather);
+</script>
+
+</body>
+</html>
