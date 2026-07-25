@@ -15,38 +15,33 @@
             --border-color: rgba(255, 255, 255, 0.04);
         }
 
+        /* Setzt Body exakt auf Fenstergröße, ohne Scrollbalken */
         body, html {
             margin: 0;
             padding: 0;
+            width: 100vw;
+            height: 100vh;
             background-color: var(--bg-color);
             color: var(--text-primary);
             font-family: 'Inter', sans-serif;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            overflow: hidden; /* Keine Scrollbalken */
+            overflow: hidden;
         }
 
-        /* Container mit dynamischer Skalierung */
-        .tile-container {
-            width: 100%;
-            max-width: 320px; /* Basisbreite für ca. 300x170 Ratio */
-            padding: 16px;
-            box-sizing: border-box;
-            container-type: inline-size;
-        }
-
-        /* Hauptkarte */
+        /* Die Karte füllt den kompletten verfügbaren Platz aus */
         .weather-card {
             background-color: var(--card-color);
             border-radius: 22px;
             border: 1px solid var(--border-color);
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255,255,255,0.05);
-            padding: 20px 24px;
+            
+            width: 100%;
+            height: 100%;
+            box-sizing: border-box;
+            padding: 16px 20px; /* Reduziertes Padding für perfekte Passform */
+            
             display: flex;
             flex-direction: column;
-            gap: 16px;
+            justify-content: space-between; /* Verteilt den Platz automatisch */
             
             /* Animation */
             opacity: 0;
@@ -66,11 +61,12 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
+            height: 65%; /* Nimmt ca 2/3 des Platzes ein */
         }
 
         .icon-container {
-            width: 80px;
-            height: 80px;
+            width: 75px;
+            height: 75px;
             display: flex;
             justify-content: center;
             align-items: center;
@@ -98,10 +94,11 @@
             letter-spacing: 0.08em;
             color: var(--text-secondary);
             margin-bottom: 2px;
+            white-space: nowrap;
         }
 
         .temperature {
-            font-size: 56px;
+            font-size: 52px; /* Leicht verkleinert für kleine Kacheln */
             font-weight: 500;
             line-height: 1;
             letter-spacing: -0.03em;
@@ -109,10 +106,11 @@
         }
 
         .description {
-            font-size: 15px;
+            font-size: 14px;
             font-weight: 400;
             color: var(--text-secondary);
             margin-top: 4px;
+            white-space: nowrap;
         }
 
         /* Trennlinie */
@@ -121,7 +119,7 @@
             height: 1px;
             background-color: var(--divider-color);
             border: none;
-            margin: 0;
+            margin: 4px 0;
         }
 
         /* Unterer Bereich */
@@ -129,20 +127,21 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding-top: 4px;
+            height: 25%;
         }
 
         .metric {
             display: flex;
             align-items: center;
             gap: 6px;
-            font-size: 14px;
+            font-size: 13px;
             font-weight: 500;
+            white-space: nowrap;
         }
 
         .metric svg {
-            width: 16px;
-            height: 16px;
+            width: 15px;
+            height: 15px;
             fill: none;
             stroke: var(--text-secondary);
             stroke-width: 2;
@@ -152,24 +151,24 @@
 
         .metric-divider {
             width: 1px;
-            height: 16px;
+            height: 14px;
             background-color: var(--divider-color);
         }
 
-        /* Responsives Feintuning für Kiosk/Displays */
-        @container (min-width: 400px) {
-            .weather-card { padding: 24px 30px; gap: 20px; }
+        /* Responsive Anpassung: Wenn das Widget größer gezogen wird */
+        @media (min-width: 350px) and (min-height: 190px) {
+            .weather-card { padding: 20px 24px; }
             .temperature { font-size: 64px; }
-            .description { font-size: 18px; }
-            .city { font-size: 14px; }
-            .metric { font-size: 15px; }
-            .icon-container { width: 100px; height: 100px; }
+            .description { font-size: 16px; }
+            .city { font-size: 13px; }
+            .metric { font-size: 14px; }
+            .icon-container { width: 85px; height: 85px; }
+            .metric svg { width: 17px; height: 17px; }
         }
     </style>
 </head>
 <body>
 
-<div class="tile-container">
     <div class="weather-card">
         <div class="top-section">
             <div class="icon-container" id="weather-icon">
@@ -201,7 +200,6 @@
             </div>
         </div>
     </div>
-</div>
 
 <script>
     // Premium SVG Icons Katalog
