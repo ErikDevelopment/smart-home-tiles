@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Premium Presence Tile</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --card-bg: #171717;
+            --text-primary: #FFFFFF;
+            --text-secondary: #9A9A9A;
+            --divider-color: rgba(255, 255, 255, 0.08);
+            --border-color: rgba(255, 255, 255, 0.04);
+            
+            /* Status Colors */
+            --status-present: #32D74B;
+            --status-absent: #2C2C2E;
+            --status-unknown: #FF9F0A;
+            --icon-purple: #BF5AF2;
+            
+            /* Avatar Size */
+            --avatar-size: 42px;
+        }
+
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100vw;
+            height: 100vh;
+            background-color: transparent; /* Wie gefordert transparent für ioBroker */
+            font-family: 'Inter', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden; /* Keine Scrollbalken */
+        }
+
+        .presence-card {
+            background-color: var(--card-bg);
+            border-radius: 22px;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+            
+            width: 100%;
+            height: 100%;
+            box-sizing: border-box;
+            padding: 20px 24px;
+            
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            
+            /* Load Animation */
+            opacity: 0;
+            transform: translateY(10px);
+            animation: fadeSlideUp 250ms ease-out forwards;
+        }
+
+        @keyframes fadeSlideUp {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* --- Header --- */
+        .header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .header svg {
+            width: 18px;
+            height: 18px;
+            fill: var(--icon-purple);
+        }
+
+        .header-title {
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 0.1em;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+        }
+
+        /* --- People Container --- */
+        .people-container {
+            display: flex;
+            justify-content: space-evenly;
+            align-items: center;
+            flex-grow: 1;
+            padding: 16px 0;
+            gap: 8px;
+        }
+
+        .person {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .avatar-wrapper {
+            position: relative;
+            width: var(--avatar-size);
+            height: var(--avatar-size);
+            border-radius: 50%;
+            background-color: rgba(255, 255, 255, 0.05);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border: 1px solid rgba(255,255,255,0.08);
+        }
+
+        .avatar-wrapper svg {
+            width: 50%;
+            height: 50%;
+            fill: var(--text-secondary);
+        }
+
+        .status-dot {
+            position: absolute;
+            bottom: -2px;
+            right: -2px;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            border: 2px solid var(--card-bg);
+            background-color: var(--status-unknown); /* Default */
+        }
+
+        .status-1 { background-color: var(--status-present); } /* Zuhause */
+        .status-0 { background-color: var(--status-absent); }  /* Nicht Zuhause */
+        .status-2 { background-color: var(--status-unknown); } /* Unbekannt */
+
+        .person-name {
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-primary);
+            max-width: 50px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            text-align: center;
+        }
+
+        /* --- Divider --- */
+        .divider {
+            width: 100%;
+            height: 1px;
+            background-color: var(--divider-color);
+            border: none;
+            margin: 0;
+        }
+
+        /* --- Footer --- */
+        .footer {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+            padding-top: 16px;
+            padding-bottom: 4px;
+        }
+
+        .footer svg {
+            width: 16px;
+            height: 16px;
+            fill: none;
+            stroke: var(--text-secondary);
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        .footer-text {
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text-secondary);
+        }
+
+        /* Responsives Feintuning für sehr kleine Flächen */
+        @media (max-width: 300px) {
+            .people-container { gap: 4px; }
+            :root { --avatar-size: 36px; }
+            .person-name { font-size: 11px; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="presence-card">
+        <!-- Header -->
+        <div class="header">
+            <svg viewBox="0 0 24 24">
+                <path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/>
+            </svg>
+            <span class="header-title">Anwesend</span>
+        </div>
+
+        <!-- People -->
+        <div class="people-container" id="people-container">
+            <!-- Personen werden dynamisch per JavaScript eingefügt -->
+        </div>
+        
+        <hr class="divider">
+        
+        <!-- Footer -->
+        <div class="footer">
+            <svg viewBox="0 0 24 24">
+                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                <polyline points="9 22 9 12 15 12 15 22"></polyline>
+            </svg>
+            <span class="footer-text" id="footer-text">Wird geladen...</span>
+        </div>
+    </div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", () => {
+        const params = new URLSearchParams(window.location.search);
+        const container = document.getElementById('people-container');
+        const footerText = document.getElementById('footer-text');
+        
+        let presentCount = 0;
+        let validPeople = [];
+
+        // Lese bis zu 6 Personen aus der URL
+        for (let i = 1; i <= 6; i++) {
+            const name = params.get(`name${i}`);
+            const status = params.get(`present${i}`); // 1 = zuhause, 0 = weg, 2 = unbekannt
+            
+            if (name) {
+                validPeople.push({
+                    name: name,
+                    status: status !== null ? status : '2' // Fallback auf 'unbekannt'
+                });
+                
+                if (status === '1') {
+                    presentCount++;
+                }
+            }
+        }
+
+        // Falls keine URL-Parameter da sind, zeige Beispieldaten für den Editor
+        if (validPeople.length === 0) {
+            validPeople = [
+                { name: 'Erik', status: '1' },
+                { name: 'Laura', status: '1' },
+                { name: 'Max', status: '0' },
+                { name: 'Emma', status: '2' }
+            ];
+            presentCount = 2; // Erik & Laura
+        }
+
+        // HTML für Personen generieren
+        const userSvg = `<svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>`;
+
+        validPeople.forEach(person => {
+            const personDiv = document.createElement('div');
+            personDiv.className = 'person';
+            
+            personDiv.innerHTML = `
+                <div class="avatar-wrapper">
+                    ${userSvg}
+                    <div class="status-dot status-${person.status}"></div>
+                </div>
+                <div class="person-name">${person.name}</div>
+            `;
+            container.appendChild(personDiv);
+        });
+
+        // Footer Text aktualisieren
+        if (presentCount === 0) {
+            footerText.textContent = "Niemand zuhause";
+        } else if (presentCount === 1) {
+            footerText.textContent = "1 Person zuhause";
+        } else {
+            footerText.textContent = `${presentCount} Personen zuhause`;
+        }
+    });
+</script>
+
+</body>
+</html>
