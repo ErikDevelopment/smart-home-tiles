@@ -194,43 +194,40 @@
           <stop offset="100%" stop-color="#eef1f4"/>
         </linearGradient>
         <radialGradient id="glassGradient" cx="35%" cy="30%" r="80%">
-          <stop offset="0%" stop-color="#2b3440"/>
-          <stop offset="70%" stop-color="#12161c"/>
-          <stop offset="100%" stop-color="#08090d"/>
+          <stop offset="0%" stop-color="#5a3f26"/>
+          <stop offset="55%" stop-color="#301f12"/>
+          <stop offset="100%" stop-color="#160d06"/>
         </radialGradient>
       </defs>
 
       <g class="dryer-body">
-        <!-- Gehaeuse -->
-        <rect x="20" y="15" width="180" height="190" rx="22" fill="#eef1f4" stroke="#d7dce1" stroke-width="2"/>
+        <!-- Gehaeuse (etwas kantiger als die Waschmaschine) -->
+        <rect x="20" y="15" width="180" height="190" rx="14" fill="#eef1f4" stroke="#d7dce1" stroke-width="2"/>
 
-        <!-- Deckel oben (blau) -->
-        <rect x="20" y="15" width="180" height="36" rx="22" fill="#4da3ff"/>
-        <rect x="20" y="39" width="180" height="12" fill="#4da3ff"/>
+        <!-- Deckel oben (warmes Amber statt Blau) -->
+        <rect x="20" y="15" width="180" height="36" rx="14" fill="#ff9f43"/>
+        <rect x="20" y="39" width="180" height="12" fill="#ff9f43"/>
 
-        <!-- Lueftungsschlitze -->
-        <rect x="34" y="21" width="6" height="18" rx="3" fill="#eaf4ff"/>
-        <rect x="44" y="21" width="6" height="18" rx="3" fill="#eaf4ff"/>
-        <rect x="54" y="21" width="6" height="18" rx="3" fill="#eaf4ff"/>
+        <!-- Lueftungsgitter (horizontale Lamellen statt Schlitze) -->
+        <rect x="30" y="21" width="112" height="2.6" rx="1.3" fill="#fff3e6" opacity="0.85"/>
+        <rect x="30" y="27" width="112" height="2.6" rx="1.3" fill="#fff3e6" opacity="0.85"/>
+        <rect x="30" y="33" width="112" height="2.6" rx="1.3" fill="#fff3e6" opacity="0.85"/>
 
-        <!-- Warmluft (steigt im Betrieb) -->
-        <path class="heat-wisp" d="M88,14 q-4,-9 0,-16" stroke="var(--heat)" stroke-width="2" fill="none" opacity="0.6" stroke-linecap="round"/>
-        <path class="heat-wisp" d="M104,14 q4,-11 0,-18" stroke="var(--heat)" stroke-width="2" fill="none" opacity="0.6" stroke-linecap="round"/>
-        <path class="heat-wisp" d="M120,14 q-4,-9 0,-16" stroke="var(--heat)" stroke-width="2" fill="none" opacity="0.6" stroke-linecap="round"/>
+        <!-- Warmluft (steigt im Betrieb aus dem Gitter) -->
+        <path class="heat-wisp" d="M55,14 q-4,-9 0,-16" stroke="var(--heat)" stroke-width="2" fill="none" opacity="0.6" stroke-linecap="round"/>
+        <path class="heat-wisp" d="M86,14 q4,-11 0,-18" stroke="var(--heat)" stroke-width="2" fill="none" opacity="0.6" stroke-linecap="round"/>
+        <path class="heat-wisp" d="M117,14 q-4,-9 0,-16" stroke="var(--heat)" stroke-width="2" fill="none" opacity="0.6" stroke-linecap="round"/>
 
-        <!-- Display -->
-        <rect x="86" y="23" width="30" height="16" rx="3" fill="#eaf4ff" opacity="0.9"/>
-
-        <!-- Drehknoepfe -->
-        <circle cx="150" cy="31" r="8" fill="#eaf4ff"/>
-        <circle cx="175" cy="31" r="8" fill="#eaf4ff"/>
+        <!-- Display + ein Drehknopf (statt Display+2 Knoepfen bei der Waschmaschine) -->
+        <rect x="150" y="24" width="26" height="14" rx="2" fill="#fff3e6" opacity="0.9"/>
+        <circle cx="184" cy="31" r="7" fill="#fff3e6"/>
 
         <!-- Status-Glow -->
         <circle id="dryerStatusGlow" cx="110" cy="130" r="76" fill="none" stroke-width="5"/>
 
         <!-- Buelauge: Metallring -->
         <circle cx="110" cy="130" r="68" fill="url(#bezelGradient)" stroke="#b9c0c7" stroke-width="2"/>
-        <!-- Glasscheibe -->
+        <!-- Glasscheibe (warm getoent statt dunkel-navy) -->
         <circle cx="110" cy="130" r="56" fill="url(#glassGradient)"/>
 
         <!-- Trommel-Inhalt (rotiert im Betrieb) -->
@@ -245,7 +242,7 @@
         <ellipse cx="90" cy="106" rx="26" ry="14" fill="#ffffff" opacity="0.14" transform="rotate(-25 90 106)"/>
 
         <!-- Tuergriff -->
-        <rect x="172" y="120" width="10" height="26" rx="5" fill="#4da3ff" transform="rotate(12 177 133)"/>
+        <rect x="172" y="120" width="10" height="26" rx="5" fill="#ff9f43" transform="rotate(12 177 133)"/>
 
         <!-- Schloss-Badge (nur wenn Tuer verriegelt) -->
         <g id="lockBadge" style="display:none">
