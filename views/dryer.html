@@ -1,0 +1,445 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Trockner</title>
+<link rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<style>
+  :root{
+    --fg:#ffffff;
+    --muted:#a0a4aa;
+    --accent:#4da3ff;
+    --warn:#f5c542;
+    --error:#ff6b6b;
+    --ok:#57d38c;
+    --idle:#5b6472;
+    --heat:#ffb15c;
+  }
+  html, body{
+    margin:0;
+    padding:0;
+    width:100%;
+    height:100%;
+    background:transparent;
+    overflow:hidden;
+  }
+  body{
+    background:transparent;
+    color:var(--fg);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+  }
+
+  /* =========================================================
+     TROCKNER-KARTE
+  ========================================================= */
+  .dryer-card{
+    width:380px;
+    padding:22px;
+    box-sizing:border-box;
+    border-radius:24px;
+    background:transparent;
+    position:relative;
+    z-index:2;
+  }
+
+  /* ---------------- ILLUSTRATION ---------------- */
+  .illustration-wrap{
+    display:flex;
+    justify-content:center;
+    margin-bottom:8px;
+  }
+  .dryer-svg{
+    width:150px;
+    height:150px;
+    overflow:visible;
+  }
+
+  #dryerStatusGlow{
+    stroke:var(--idle);
+    opacity:.35;
+    transition:stroke .4s ease, opacity .4s ease;
+  }
+  .dryer-svg.state-run #dryerStatusGlow{
+    stroke:var(--ok);
+    animation:pulse-glow 1.6s ease-in-out infinite;
+  }
+  .dryer-svg.state-delayedstart #dryerStatusGlow{ stroke:var(--accent); opacity:.55; }
+  .dryer-svg.state-pause #dryerStatusGlow{ stroke:var(--warn); opacity:.6; }
+  .dryer-svg.state-actionrequired #dryerStatusGlow{
+    stroke:var(--warn);
+    animation:pulse-glow 1s ease-in-out infinite;
+  }
+  .dryer-svg.state-error #dryerStatusGlow{
+    stroke:var(--error);
+    animation:pulse-glow .9s ease-in-out infinite;
+  }
+  .dryer-svg.state-finished #dryerStatusGlow{ stroke:var(--ok); opacity:.7; }
+  @keyframes pulse-glow{
+    0%,100%{ opacity:.35; }
+    50%{ opacity:.85; }
+  }
+
+  /* Trommel dreht sich im Betrieb */
+  #dryerDrumContents{
+    transform-box: fill-box;
+    transform-origin: center;
+  }
+  .dryer-svg.state-run #dryerDrumContents{
+    animation: drum-spin 1.3s linear infinite;
+  }
+  @keyframes drum-spin{
+    to{ transform: rotate(360deg); }
+  }
+
+  /* Warmluft steigt aus den Lueftungsschlitzen im Betrieb */
+  .heat-wisp{ opacity:0; }
+  .dryer-svg.state-run .heat-wisp{
+    animation: heat-rise 1.8s ease-in infinite;
+  }
+  .dryer-svg.state-run .heat-wisp:nth-child(2){ animation-delay:.4s; }
+  .dryer-svg.state-run .heat-wisp:nth-child(3){ animation-delay:.8s; }
+  @keyframes heat-rise{
+    0%{ transform:translateY(0); opacity:0; }
+    30%{ opacity:.6; }
+    100%{ transform:translateY(-14px); opacity:0; }
+  }
+
+  /* ---------------- TEXT-INFO ---------------- */
+  .info{
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-start;
+    text-align:left;
+  }
+  .program{
+    font-size:24px;
+    font-weight:500;
+    line-height:1.2;
+  }
+  .status-row{
+    margin-top:6px;
+    display:flex;
+    align-items:center;
+    gap:8px;
+    font-size:15px;
+    color:#ddd;
+  }
+  .status-row i{ color:var(--accent); font-size:16px; }
+  .status-row.state-run i{ color:var(--ok); }
+  .status-row.state-pause i,
+  .status-row.state-actionrequired i,
+  .status-row.state-delayedstart i{ color:var(--warn); }
+  .status-row.state-error i{ color:var(--error); }
+
+  .door-row{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    font-size:13px;
+    color:var(--muted);
+    text-align:right;
+  }
+  .door-row.door-open{ color:var(--warn); }
+
+  /* PROGRESS */
+  .progress-wrap{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    margin-top:20px;
+  }
+  .progress-track{
+    flex:1;
+    height:6px;
+    background:rgba(255,255,255,0.12);
+    border-radius:4px;
+    overflow:hidden;
+  }
+  .progress-bar{
+    height:100%;
+    width:0%;
+    background:var(--heat);
+    border-radius:4px;
+    transition:width .5s ease;
+  }
+  .progress-pct{
+    font-size:13px;
+    color:var(--muted);
+    min-width:34px;
+    text-align:right;
+  }
+
+  /* ENDZEIT */
+  .endtime{
+    margin-top:14px;
+    font-size:14px;
+    color:var(--muted);
+  }
+</style>
+</head>
+<body>
+<main class="dryer-card">
+
+  <div class="illustration-wrap">
+    <svg id="dryerSvg" class="dryer-svg" viewBox="0 0 220 220" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="bezelGradient" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stop-color="#f4f6f8"/>
+          <stop offset="55%" stop-color="#c7cdd3"/>
+          <stop offset="100%" stop-color="#eef1f4"/>
+        </linearGradient>
+        <radialGradient id="glassGradient" cx="35%" cy="30%" r="80%">
+          <stop offset="0%" stop-color="#2b3440"/>
+          <stop offset="70%" stop-color="#12161c"/>
+          <stop offset="100%" stop-color="#08090d"/>
+        </radialGradient>
+      </defs>
+
+      <g class="dryer-body">
+        <!-- Gehaeuse -->
+        <rect x="20" y="15" width="180" height="190" rx="22" fill="#eef1f4" stroke="#d7dce1" stroke-width="2"/>
+
+        <!-- Deckel oben (blau) -->
+        <rect x="20" y="15" width="180" height="36" rx="22" fill="#4da3ff"/>
+        <rect x="20" y="39" width="180" height="12" fill="#4da3ff"/>
+
+        <!-- Lueftungsschlitze -->
+        <rect x="34" y="21" width="6" height="18" rx="3" fill="#eaf4ff"/>
+        <rect x="44" y="21" width="6" height="18" rx="3" fill="#eaf4ff"/>
+        <rect x="54" y="21" width="6" height="18" rx="3" fill="#eaf4ff"/>
+
+        <!-- Warmluft (steigt im Betrieb) -->
+        <path class="heat-wisp" d="M88,14 q-4,-9 0,-16" stroke="var(--heat)" stroke-width="2" fill="none" opacity="0.6" stroke-linecap="round"/>
+        <path class="heat-wisp" d="M104,14 q4,-11 0,-18" stroke="var(--heat)" stroke-width="2" fill="none" opacity="0.6" stroke-linecap="round"/>
+        <path class="heat-wisp" d="M120,14 q-4,-9 0,-16" stroke="var(--heat)" stroke-width="2" fill="none" opacity="0.6" stroke-linecap="round"/>
+
+        <!-- Display -->
+        <rect x="86" y="23" width="30" height="16" rx="3" fill="#eaf4ff" opacity="0.9"/>
+
+        <!-- Drehknoepfe -->
+        <circle cx="150" cy="31" r="8" fill="#eaf4ff"/>
+        <circle cx="175" cy="31" r="8" fill="#eaf4ff"/>
+
+        <!-- Status-Glow -->
+        <circle id="dryerStatusGlow" cx="110" cy="130" r="76" fill="none" stroke-width="5"/>
+
+        <!-- Buelauge: Metallring -->
+        <circle cx="110" cy="130" r="68" fill="url(#bezelGradient)" stroke="#b9c0c7" stroke-width="2"/>
+        <!-- Glasscheibe -->
+        <circle cx="110" cy="130" r="56" fill="url(#glassGradient)"/>
+
+        <!-- Trommel-Inhalt (rotiert im Betrieb) -->
+        <g id="dryerDrumContents">
+          <circle cx="110" cy="130" r="44" fill="none" stroke="#2a3038" stroke-width="2" stroke-dasharray="4 7"/>
+          <ellipse cx="92" cy="115" rx="14" ry="10" fill="#ff9fb0" opacity="0.85" transform="rotate(-20 92 115)"/>
+          <ellipse cx="126" cy="148" rx="16" ry="11" fill="#7fd9c4" opacity="0.85" transform="rotate(15 126 148)"/>
+          <ellipse cx="100" cy="150" rx="12" ry="9" fill="#ffd97f" opacity="0.85" transform="rotate(-8 100 150)"/>
+        </g>
+
+        <!-- Statische Glas-Reflexion (rotiert nicht mit) -->
+        <ellipse cx="90" cy="106" rx="26" ry="14" fill="#ffffff" opacity="0.14" transform="rotate(-25 90 106)"/>
+
+        <!-- Tuergriff -->
+        <rect x="172" y="120" width="10" height="26" rx="5" fill="#4da3ff" transform="rotate(12 177 133)"/>
+
+        <!-- Schloss-Badge (nur wenn Tuer verriegelt) -->
+        <g id="lockBadge" style="display:none">
+          <circle cx="168" cy="178" r="15" fill="#1c2128" stroke="#3a4048" stroke-width="1.5"/>
+          <path d="M162,177 v-4 a6,6 0 0 1 12,0 v4" fill="none" stroke="#f5c542" stroke-width="1.8" stroke-linecap="round"/>
+          <rect x="160" y="177" width="16" height="11" rx="2" fill="#f5c542"/>
+        </g>
+      </g>
+    </svg>
+  </div>
+
+  <div class="info">
+    <div>
+      <div class="program" id="program">–</div>
+      <div class="status-row" id="statusRow">
+        <i id="stateIcon" class="fa-solid fa-question"></i>
+        <span id="statusLabel">–</span>
+      </div>
+    </div>
+    <div class="door-row" id="doorRow">
+      <i id="doorIcon" class="fa-solid fa-door-closed"></i>
+      <span id="doorLabel">–</span>
+    </div>
+  </div>
+
+  <div class="progress-wrap" id="progressWrap" style="display:none">
+    <div class="progress-track">
+      <div class="progress-bar" id="progressBar"></div>
+    </div>
+    <span class="progress-pct" id="progressPct">0%</span>
+  </div>
+
+  <div class="endtime" id="endtime" style="display:none"></div>
+</main>
+
+<script>
+/* ======================================================
+   TROCKNER-WIDGET
+   Erwartete URL-Parameter (gleiches Schema wie Waschmaschine/Geschirrspueler):
+   ?state=...        (BSH_Common_Status_OperationState, roh)
+   &door=...         (BSH_Common_Status_DoorState, roh)
+   &program=...      (BSH_Common_Root_ActiveProgram, roh)
+   &remaining=...    (RemainingProgramTime in Sekunden)
+   &progress=...     (ProgramProgress in Prozent, 0-100)
+   &remoteactive=... (true/false)
+   &remotestart=...  (true/false)
+
+   Ohne Parameter (z.B. direkt im Browser geoeffnet) laeuft die Seite
+   mit Dummy-Daten (state=Run), damit man die Animation sofort sieht.
+====================================================== */
+const p = new URLSearchParams(location.search);
+
+/* ===============================
+   SAFE PARSE HELPERS
+================================ */
+function str(val, def){
+  if (!val || typeof val !== "string") return def;
+  return val.trim() || def;
+}
+function num(val, def, min = -Infinity, max = Infinity){
+  if (val === null || val === undefined || val === "") return def;
+  const n = Number(val);
+  if (Number.isNaN(n)) return def;
+  if (n < min || n > max) return def;
+  return n;
+}
+function bool(val, def = false){
+  if (val === null || val === undefined || val === "") return def;
+  return String(val).toLowerCase() === "true";
+}
+
+/* Dummy-Werte, solange kein/kein gueltiger Parameter uebergeben wird */
+const rawState     = str(p.get("state"), "Run");
+const rawDoor      = str(p.get("door"), "Closed");
+const rawProgram   = str(p.get("program"), "LaundryCare.Dryer.Program.Cotton");
+const remainingSec = num(p.get("remaining"), 2400, 0, 100000);
+const progress      = num(p.get("progress"), 55, 0, 100);
+const remoteActive  = bool(p.get("remoteactive"), true);
+const remoteStart   = bool(p.get("remotestart"), false);
+
+/* ===============================
+   ÜBERSETZUNGEN
+================================ */
+function translateState(raw){
+  const t = raw.toLowerCase();
+  if (t.includes("delayedstart")) return { key:"delayedstart", label:"Startet verzögert", icon:"fa-clock" };
+  if (t.includes("run"))          return { key:"run",          label:"Läuft",             icon:"fa-arrows-rotate" };
+  if (t.includes("pause"))        return { key:"pause",         label:"Pausiert",          icon:"fa-pause" };
+  if (t.includes("actionrequired")) return { key:"actionrequired", label:"Aktion erforderlich", icon:"fa-triangle-exclamation" };
+  if (t.includes("finished"))     return { key:"finished",      label:"Fertig",            icon:"fa-circle-check" };
+  if (t.includes("error"))        return { key:"error",         label:"Fehler",            icon:"fa-circle-exclamation" };
+  if (t.includes("aborting"))     return { key:"aborting",      label:"Wird abgebrochen",  icon:"fa-circle-xmark" };
+  if (t.includes("ready"))        return { key:"ready",         label:"Bereit",            icon:"fa-power-off" };
+  if (t.includes("inactive"))     return { key:"inactive",      label:"Inaktiv",           icon:"fa-power-off" };
+  return { key:"unknown", label:"Unbekannt", icon:"fa-question" };
+}
+
+function translateDoor(raw){
+  const t = raw.toLowerCase();
+  if (t.includes("locked")) return { key:"locked", label:"Verriegelt", icon:"fa-lock",       open:false };
+  if (t.includes("open"))   return { key:"open",   label:"Offen",       icon:"fa-door-open",  open:true  };
+  if (t.includes("closed")) return { key:"closed", label:"Geschlossen", icon:"fa-door-closed", open:false };
+  return { key:"unknown", label:"Unbekannt", icon:"fa-door-closed", open:false };
+}
+
+const PROGRAM_NAMES = {
+  Cotton: "Baumwolle",
+  Mix: "Mix",
+  EasyCare: "Pflegeleicht",
+  Synthetic: "Synthetik",
+  Wool: "Wolle Auffrischen",
+  Dessous: "Feinwäsche",
+  Shirts_Blouses: "Hemden / Blusen",
+  TimedCold: "Zeitgesteuert Kalt",
+  TimedWarm: "Zeitgesteuert Warm",
+  InBasket: "Korbtrocknen",
+  DownDuvet: "Daunen",
+  Outdoor: "Outdoor"
+};
+function translateProgram(raw){
+  if (!raw) return "Kein Programm aktiv";
+  const last = raw.split(".").pop();
+  if (PROGRAM_NAMES[last]) return PROGRAM_NAMES[last];
+  return last.replace(/_/g, " ").replace(/([a-z])([A-Z])/g, "$1 $2");
+}
+
+/* ===============================
+   UI: PROGRAMM + STATUS
+================================ */
+const st = translateState(rawState);
+document.getElementById("program").textContent = translateProgram(rawProgram);
+
+const statusRow = document.getElementById("statusRow");
+statusRow.className = "status-row state-" + st.key;
+document.getElementById("statusLabel").textContent = st.label;
+document.getElementById("stateIcon").className = "fa-solid " + st.icon;
+
+/* Illustration: Status-Klasse fuer Glow/Animation setzen */
+document.getElementById("dryerSvg").classList.add("state-" + st.key);
+
+/* ===============================
+   UI: TÜR
+================================ */
+const door = translateDoor(rawDoor);
+const doorRow = document.getElementById("doorRow");
+doorRow.className = "door-row" + (door.open ? " door-open" : "");
+document.getElementById("doorLabel").textContent = door.label;
+document.getElementById("doorIcon").className = "fa-solid " + door.icon;
+document.getElementById("lockBadge").style.display = (door.key === "locked") ? "" : "none";
+
+/* ===============================
+   FORTSCHRITT
+================================ */
+const isActive = ["run", "pause", "delayedstart"].includes(st.key);
+const progressWrap = document.getElementById("progressWrap");
+const progressBar = document.getElementById("progressBar");
+const progressPct = document.getElementById("progressPct");
+if (progress !== null && isActive) {
+  progressWrap.style.display = "";
+  progressBar.style.width = progress + "%";
+  progressPct.textContent = Math.round(progress) + "%";
+} else {
+  progressWrap.style.display = "none";
+}
+
+/* ===============================
+   ENDZEIT (lebt weiter, auch ohne neue URL)
+================================ */
+const endtimeEl = document.getElementById("endtime");
+let endTimestamp = null;
+if (isActive && remainingSec > 0) {
+  endTimestamp = Date.now() + remainingSec * 1000;
+  endtimeEl.style.display = "";
+  updateEndtimeText();
+  setInterval(updateEndtimeText, 30000);
+} else {
+  endtimeEl.style.display = "none";
+}
+function updateEndtimeText(){
+  if (!endTimestamp) return;
+  const remainMs = endTimestamp - Date.now();
+  if (remainMs <= 0) {
+    endtimeEl.textContent = "Gleich fertig";
+    return;
+  }
+  const end = new Date(endTimestamp);
+  const hh = String(end.getHours()).padStart(2, "0");
+  const mm = String(end.getMinutes()).padStart(2, "0");
+  const remMin = Math.round(remainMs / 60000);
+  const remH = Math.floor(remMin / 60);
+  const remM = remMin % 60;
+  const remText = remH > 0 ? `${remH} Std ${remM} Min` : `${remM} Min`;
+  endtimeEl.textContent = `Fertig um ${hh}:${mm} (noch ${remText})`;
+}
+</script>
+</body>
+</html>
