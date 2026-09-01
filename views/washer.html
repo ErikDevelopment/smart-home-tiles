@@ -1,0 +1,314 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Waschmaschine</title>
+<link rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<style>
+  :root{
+    --fg:#ffffff;
+    --muted:#a0a4aa;
+    --accent:#4da3ff;
+    --warn:#f5c542;
+    --error:#ff6b6b;
+    --ok:#57d38c;
+  }
+  html, body{
+    margin:0;
+    padding:0;
+    width:100%;
+    height:100%;
+    background:transparent;
+    overflow:hidden;
+  }
+  body{
+    background:transparent;
+    color:var(--fg);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+  }
+
+  /* =========================================================
+     WASCHMASCHINEN-KARTE (gleicher Look wie Wetter/Uhr-Kachel)
+  ========================================================= */
+  .washer-card{
+    width:380px;
+    padding:22px;
+    box-sizing:border-box;
+    border-radius:24px;
+    background:transparent;
+    position:relative;
+    z-index:2;
+  }
+
+  .header{
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-start;
+  }
+  .program{
+    font-size:26px;
+    font-weight:500;
+    line-height:1.2;
+  }
+  .status-row{
+    margin-top:6px;
+    display:flex;
+    align-items:center;
+    gap:8px;
+    font-size:15px;
+    color:#ddd;
+  }
+  .status-row i{
+    color:var(--accent);
+    font-size:16px;
+  }
+  .status-row.state-run i{ color:var(--ok); }
+  .status-row.state-pause i{ color:var(--warn); }
+  .status-row.state-error i{ color:var(--error); }
+  .status-row.state-actionrequired i{ color:var(--warn); }
+
+  .door-row{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    font-size:13px;
+    color:var(--muted);
+    text-align:right;
+  }
+  .door-row.door-open{ color:var(--warn); }
+
+  /* PROGRESS */
+  .progress-wrap{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    margin-top:20px;
+  }
+  .progress-track{
+    flex:1;
+    height:6px;
+    background:rgba(255,255,255,0.12);
+    border-radius:4px;
+    overflow:hidden;
+  }
+  .progress-bar{
+    height:100%;
+    width:0%;
+    background:var(--accent);
+    border-radius:4px;
+    transition:width .5s ease;
+  }
+  .progress-pct{
+    font-size:13px;
+    color:var(--muted);
+    min-width:34px;
+    text-align:right;
+  }
+
+  /* ENDZEIT */
+  .endtime{
+    margin-top:14px;
+    font-size:14px;
+    color:var(--muted);
+  }
+
+  /* SPIN-ICON WAEHREND DES PROGRAMMS */
+  @keyframes spin{
+    from{ transform:rotate(0deg); }
+    to{ transform:rotate(360deg); }
+  }
+  .spin{
+    display:inline-block;
+    animation: spin 2.2s linear infinite;
+  }
+</style>
+</head>
+<body>
+<main class="washer-card">
+  <div class="header">
+    <div>
+      <div class="program" id="program">–</div>
+      <div class="status-row" id="statusRow">
+        <i id="stateIcon" class="fa-solid fa-question"></i>
+        <span id="statusLabel">–</span>
+      </div>
+    </div>
+    <div class="door-row" id="doorRow">
+      <i id="doorIcon" class="fa-solid fa-door-closed"></i>
+      <span id="doorLabel">–</span>
+    </div>
+  </div>
+
+  <div class="progress-wrap" id="progressWrap" style="display:none">
+    <div class="progress-track">
+      <div class="progress-bar" id="progressBar"></div>
+    </div>
+    <span class="progress-pct" id="progressPct">0%</span>
+  </div>
+
+  <div class="endtime" id="endtime" style="display:none"></div>
+</main>
+
+<script>
+/* ======================================================
+   WASCHMASCHINEN-WIDGET
+   Erwartete URL-Parameter:
+   ?state=...        (BSH_Common_Status_OperationState, roh)
+   &door=...         (BSH_Common_Status_DoorState, roh)
+   &program=...      (BSH_Common_Root_ActiveProgram, roh)
+   &remaining=...    (RemainingProgramTime in Sekunden)
+   &progress=...     (ProgramProgress in Prozent, 0-100)
+   &remoteactive=... (true/false)
+   &remotestart=...  (true/false)
+====================================================== */
+const p = new URLSearchParams(location.search);
+
+/* ===============================
+   SAFE PARSE HELPERS
+================================ */
+function str(val, def){
+  if (!val || typeof val !== "string") return def;
+  return val.trim() || def;
+}
+function num(val, def, min = -Infinity, max = Infinity){
+  if (val === null || val === undefined || val === "") return def;
+  const n = Number(val);
+  if (Number.isNaN(n)) return def;
+  if (n < min || n > max) return def;
+  return n;
+}
+function bool(val, def = false){
+  if (val === null || val === undefined || val === "") return def;
+  return String(val).toLowerCase() === "true";
+}
+
+const rawState    = str(p.get("state"), "");
+const rawDoor     = str(p.get("door"), "");
+const rawProgram  = str(p.get("program"), "");
+const remainingSec = num(p.get("remaining"), 0, 0, 100000);
+const progress     = num(p.get("progress"), null, 0, 100);
+const remoteActive = bool(p.get("remoteactive"), false);
+const remoteStart  = bool(p.get("remotestart"), false);
+
+/* ===============================
+   ÜBERSETZUNGEN
+================================ */
+function translateState(raw){
+  const t = raw.toLowerCase();
+  if (t.includes("delayedstart")) return { key:"delayedstart", label:"Startet verzögert", icon:"fa-clock",              spin:false };
+  if (t.includes("run"))          return { key:"run",          label:"Läuft",             icon:"fa-arrows-rotate",      spin:true  };
+  if (t.includes("pause"))        return { key:"pause",         label:"Pausiert",          icon:"fa-pause",              spin:false };
+  if (t.includes("actionrequired")) return { key:"actionrequired", label:"Aktion erforderlich", icon:"fa-triangle-exclamation", spin:false };
+  if (t.includes("finished"))     return { key:"finished",      label:"Fertig",            icon:"fa-circle-check",       spin:false };
+  if (t.includes("error"))        return { key:"error",         label:"Fehler",            icon:"fa-circle-exclamation", spin:false };
+  if (t.includes("aborting"))     return { key:"aborting",      label:"Wird abgebrochen",  icon:"fa-circle-xmark",       spin:false };
+  if (t.includes("ready"))        return { key:"ready",         label:"Bereit",            icon:"fa-power-off",          spin:false };
+  if (t.includes("inactive"))     return { key:"inactive",      label:"Inaktiv",           icon:"fa-power-off",          spin:false };
+  return { key:"unknown", label:"Unbekannt", icon:"fa-question", spin:false };
+}
+
+function translateDoor(raw){
+  const t = raw.toLowerCase();
+  if (t.includes("locked")) return { label:"Verriegelt", icon:"fa-lock",       open:false };
+  if (t.includes("open"))   return { label:"Offen",       icon:"fa-door-open",  open:true  };
+  if (t.includes("closed")) return { label:"Geschlossen", icon:"fa-door-closed", open:false };
+  return { label:"Unbekannt", icon:"fa-door-closed", open:false };
+}
+
+const PROGRAM_NAMES = {
+  Cotton: "Baumwolle",
+  CottonEco: "Baumwolle Eco",
+  EasyCare: "Pflegeleicht",
+  Mix: "Mix",
+  DelicatesSilk: "Feinwäsche / Seide",
+  Wool: "Wolle",
+  DarkWash: "Dunkle Wäsche",
+  Rinse: "Spülen",
+  Spin: "Schleudern",
+  Drain: "Abpumpen",
+  QuickWash: "Kurzprogramm",
+  Shirts_Blouses: "Hemden / Blusen",
+  Outdoor: "Outdoor",
+  DownDuvet: "Daunen"
+};
+function translateProgram(raw){
+  if (!raw) return "Kein Programm aktiv";
+  const last = raw.split(".").pop();
+  if (PROGRAM_NAMES[last]) return PROGRAM_NAMES[last];
+  // Fallback: CamelCase in lesbare Woerter auftrennen
+  return last.replace(/_/g, " ").replace(/([a-z])([A-Z])/g, "$1 $2");
+}
+
+/* ===============================
+   UI: PROGRAMM + STATUS
+================================ */
+const st = translateState(rawState);
+document.getElementById("program").textContent = translateProgram(rawProgram);
+
+const statusRow = document.getElementById("statusRow");
+statusRow.className = "status-row state-" + st.key;
+document.getElementById("statusLabel").textContent = st.label;
+const stateIcon = document.getElementById("stateIcon");
+stateIcon.className = "fa-solid " + st.icon + (st.spin ? " spin" : "");
+
+/* ===============================
+   UI: TÜR
+================================ */
+const door = translateDoor(rawDoor);
+const doorRow = document.getElementById("doorRow");
+doorRow.className = "door-row" + (door.open ? " door-open" : "");
+document.getElementById("doorLabel").textContent = door.label;
+document.getElementById("doorIcon").className = "fa-solid " + door.icon;
+
+/* ===============================
+   FORTSCHRITT
+================================ */
+const isActive = ["run", "pause", "delayedstart"].includes(st.key);
+const progressWrap = document.getElementById("progressWrap");
+const progressBar = document.getElementById("progressBar");
+const progressPct = document.getElementById("progressPct");
+if (progress !== null && isActive) {
+  progressWrap.style.display = "";
+  progressBar.style.width = progress + "%";
+  progressPct.textContent = Math.round(progress) + "%";
+} else {
+  progressWrap.style.display = "none";
+}
+
+/* ===============================
+   ENDZEIT (lebt weiter, auch ohne neue URL)
+================================ */
+const endtimeEl = document.getElementById("endtime");
+let endTimestamp = null;
+if (isActive && remainingSec > 0) {
+  endTimestamp = Date.now() + remainingSec * 1000;
+  endtimeEl.style.display = "";
+  updateEndtimeText();
+  setInterval(updateEndtimeText, 30000);
+} else {
+  endtimeEl.style.display = "none";
+}
+function updateEndtimeText(){
+  if (!endTimestamp) return;
+  const remainMs = endTimestamp - Date.now();
+  if (remainMs <= 0) {
+    endtimeEl.textContent = "Gleich fertig";
+    return;
+  }
+  const end = new Date(endTimestamp);
+  const hh = String(end.getHours()).padStart(2, "0");
+  const mm = String(end.getMinutes()).padStart(2, "0");
+  const remMin = Math.round(remainMs / 60000);
+  const remH = Math.floor(remMin / 60);
+  const remM = remMin % 60;
+  const remText = remH > 0 ? `${remH} Std ${remM} Min` : `${remM} Min`;
+  endtimeEl.textContent = `Fertig um ${hh}:${mm} (noch ${remText})`;
+}
+</script>
+</body>
+</html>
