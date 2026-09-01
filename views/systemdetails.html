@@ -23,10 +23,10 @@
     background:transparent;
     color:var(--fg);
     font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial;
-    display:flex; justify-content:center; align-items:center;
+    display:flex; justify-content:center; align-items:flex-start;
   }
   .tile{
-    width:340px;
+    width:360px;
     padding:20px 22px;
     box-sizing:border-box;
     border-radius:22px;
@@ -36,188 +36,104 @@
     display:flex; align-items:center; gap:8px;
     font-size:12px; color:var(--muted);
     text-transform:uppercase; letter-spacing:.05em;
-    margin-bottom:14px;
+    margin-bottom:6px;
   }
   .head i{ font-size:13px; color:var(--accent); }
 
-  .row{
-    padding:9px 0;
-    border-top:1px solid rgba(255,255,255,0.07);
+  .host-block{ margin-top:14px; }
+  .host-title{
+    display:flex; align-items:center; gap:7px;
+    font-size:12.5px; font-weight:600;
+    color:var(--fg);
+    padding-top:12px;
+    border-top:1px solid rgba(255,255,255,0.09);
   }
-  .row:first-of-type{ border-top:none; padding-top:0; }
+  .host-title i{ font-size:12px; color:var(--accent); }
 
-  .row-top{
+  .mrow{
     display:flex;
     align-items:baseline;
     justify-content:space-between;
     gap:10px;
-  }
-  .row-label{
-    display:flex; align-items:center; gap:7px;
+    padding:6px 0;
     font-size:12.5px;
-    color:var(--muted);
   }
-  .row-label i{ width:14px; text-align:center; color:var(--accent); font-size:12px; }
-  .row-val{
-    font-size:16px;
-    font-weight:500;
-  }
-  .row-sub{
-    margin-top:3px;
-    font-size:11px;
-    color:var(--muted);
-  }
+  .mrow .mlabel{ color:var(--muted); display:flex; align-items:center; gap:6px; }
+  .mrow .mlabel i{ width:12px; text-align:center; font-size:11px; color:var(--accent); }
+  .mrow .mval{ font-weight:500; font-size:13.5px; }
+  .mrow .msub{ color:var(--muted); font-size:11px; margin-left:6px; font-weight:400; }
 
   .bar-track{
-    margin-top:7px;
-    height:4px;
+    height:3px;
     border-radius:2px;
     background:rgba(255,255,255,0.1);
     overflow:hidden;
+    margin-top:-2px;
+    margin-bottom:4px;
   }
   .bar-fill{
     height:100%;
     border-radius:2px;
     width:0%;
-    transition:width .5s ease, background .3s ease;
   }
 
-  .net-line{
-    display:flex; align-items:center; gap:6px;
-    font-size:11px; color:var(--muted);
-    margin-top:3px;
-  }
-  .net-line .dot{
-    width:7px; height:7px; border-radius:50%;
-    background:#5b6472;
-    flex-shrink:0;
-  }
-  .net-line .dot.on{ background:var(--ok); }
-  .net-line .dot.off{ background:var(--error); }
-  .net-line .ip{ margin-left:auto; font-variant-numeric:tabular-nums; }
-  .net-line.active{ color:var(--fg); }
-
-  .badge{
+  .warn-badge{
     display:inline-flex;
     align-items:center;
     gap:5px;
     font-size:11px;
     padding:3px 9px;
     border-radius:10px;
-  }
-  .badge.ok{
-    color:var(--ok);
-    background:rgba(87,211,140,0.14);
-    border:1px solid rgba(87,211,140,0.4);
-  }
-  .badge.warn{
     color:var(--error);
     background:rgba(255,107,107,0.14);
     border:1px solid rgba(255,107,107,0.4);
+    margin-top:4px;
+  }
+
+  .no-data{
+    font-size:11.5px;
+    color:var(--muted);
+    padding:6px 0;
   }
 </style>
 </head>
 <body>
 <main class="tile">
-  <div class="head"><i class="fa-solid fa-server"></i> Systemstatus</div>
-
-  <div class="row">
-    <div class="row-top">
-      <span class="row-label"><i class="fa-solid fa-microchip"></i> CPU</span>
-      <span class="row-val" id="cpuTempVal">–</span>
-    </div>
-    <div class="bar-track"><div class="bar-fill" id="cpuBar"></div></div>
-    <div class="row-sub" id="cpuSub">–</div>
-  </div>
-
-  <div class="row">
-    <div class="row-top">
-      <span class="row-label"><i class="fa-solid fa-memory"></i> RAM</span>
-      <span class="row-val" id="ramVal">–</span>
-    </div>
-    <div class="bar-track"><div class="bar-fill" id="ramBar"></div></div>
-    <div class="row-sub" id="ramSub">–</div>
-  </div>
-
-  <div class="row">
-    <div class="row-top">
-      <span class="row-label"><i class="fa-solid fa-hard-drive"></i> Speicher</span>
-      <span class="row-val" id="diskVal">–</span>
-    </div>
-    <div class="bar-track"><div class="bar-fill" id="diskBar"></div></div>
-    <div class="row-sub" id="diskSub">–</div>
-  </div>
-
-  <div class="row">
-    <div class="row-top">
-      <span class="row-label"><i class="fa-solid fa-network-wired"></i> Netzwerk</span>
-      <span class="row-val" id="netVal">–</span>
-    </div>
-    <div class="net-line" id="lanLine">
-      <span class="dot" id="lanDot"></span><span>LAN</span><span class="ip" id="lanIp">–</span>
-    </div>
-    <div class="net-line" id="wlanLine">
-      <span class="dot" id="wlanDot"></span><span>WLAN</span><span class="ip" id="wlanIp">–</span>
-    </div>
-  </div>
-
-  <div class="row">
-    <div class="row-top">
-      <span class="row-label"><i class="fa-solid fa-clock-rotate-left"></i> Laufzeit</span>
-      <span class="row-val" id="uptimeVal">–</span>
-    </div>
-    <div class="row-sub"><span class="badge" id="throttleBadge">–</span></div>
-  </div>
+  <div class="head"><i class="fa-solid fa-server"></i> System – Master &amp; Slave</div>
+  <div id="hosts"></div>
 </main>
 
 <script>
-/* URL-Parameter (alles optional, ohne Parameter laufen Dummy-Daten):
-   ?temp=&load1=&load5=&load15=
-   &ramFree=&ramFreePercent=&ramTotal=
-   &diskFree=&diskFreePercent=&diskTotal=
-   &active=&ipLan=&ipWlan=&lan=&wlan=
-   &uptime=&throttled=
-   (free/total-Werte in GB) */
-const p = new URLSearchParams(location.search);
+/* URL-Parameter (Prefix m = Master, s = Slave), alles optional:
+   ?mName=&mTemp=&mLoad1=&mRamFree=&mRamFreePercent=&mRamTotal=
+   &mDiskFree=&mDiskFreePercent=&mDiskTotal=&mActive=&mIpLan=&mIpWlan=&mUptime=&mThrottled=
+   (dieselben Parameter nochmal mit Prefix "s" fuer den Slave)
 
-function num(val, def){
-  if (val === null || val === undefined || val === "") return def;
-  const n = Number(String(val).replace(",", "."));
-  return Number.isNaN(n) ? def : n;
-}
-function str(val, def){
-  if (!val || typeof val !== "string") return def;
-  return val.trim() || def;
-}
-function bool(val, def){
-  if (val === null || val === undefined || val === "") return def;
-  return String(val).toLowerCase() === "true";
-}
+   Wird die Seite OHNE jegliche Parameter geoeffnet (reine Vorschau),
+   laufen auf beiden Bloecken Dummy-Daten. Sobald mindestens ein
+   Parameter da ist (echter Betrieb), wird ein fehlender/leerer
+   Einzelwert nicht mit einem Dummy aufgefuellt, sondern die Zeile
+   einfach ausgeblendet (z.B. Temperatur auf einem Host ohne Sensor). */
 
-/* ---- CPU ---- */
-const temp = num(p.get("temp"), 63.7);
-const load1 = num(p.get("load1"), 0.15);
-const load5 = num(p.get("load5"), 0.06);
-const load15 = num(p.get("load15"), 0.06);
+const params = new URLSearchParams(location.search);
+const live = params.toString().length > 0;
 
-function tempColor(t){
-  if (t === null) return "var(--muted)";
-  if (t < 60) return "var(--ok)";
-  if (t < 75) return "var(--warn)";
-  return "var(--error)";
+function num(key, dummy){
+  const raw = params.get(key);
+  if (raw === null || raw === "") return live ? null : dummy;
+  const n = Number(String(raw).replace(",", "."));
+  return Number.isNaN(n) ? (live ? null : dummy) : n;
 }
-const cpuColor = tempColor(temp);
-document.getElementById("cpuTempVal").textContent = (temp !== null ? temp.toFixed(1) : "–") + "°C";
-document.getElementById("cpuTempVal").style.color = cpuColor;
-document.getElementById("cpuBar").style.width = (temp !== null ? Math.max(0, Math.min(100, (temp / 85) * 100)) : 0) + "%";
-document.getElementById("cpuBar").style.background = cpuColor;
-document.getElementById("cpuSub").textContent =
-  "Last " + load1.toFixed(2) + " · " + load5.toFixed(2) + " · " + load15.toFixed(2) + " (1/5/15 Min)";
-
-/* ---- RAM ---- */
-const ramFree = num(p.get("ramFree"), 1.2);
-const ramFreePct = num(p.get("ramFreePercent"), 28);
-const ramTotal = num(p.get("ramTotal"), 4);
+function str(key, dummy){
+  const raw = params.get(key);
+  if (!raw) return live ? null : dummy;
+  return raw;
+}
+function bool(key, dummy){
+  const raw = params.get(key);
+  if (raw === null || raw === "") return live ? null : dummy;
+  return String(raw).toLowerCase() === "true";
+}
 
 function usageColor(usedPct){
   if (usedPct === null) return "var(--muted)";
@@ -225,53 +141,14 @@ function usageColor(usedPct){
   if (usedPct < 88) return "var(--warn)";
   return "var(--error)";
 }
-const ramUsedPct = ramFreePct !== null ? 100 - ramFreePct : null;
-const ramColor = usageColor(ramUsedPct);
-document.getElementById("ramVal").textContent = (ramFreePct !== null ? ramFreePct.toFixed(0) : "–") + "% frei";
-document.getElementById("ramVal").style.color = ramColor;
-document.getElementById("ramBar").style.width = (ramUsedPct !== null ? Math.max(0, Math.min(100, ramUsedPct)) : 0) + "%";
-document.getElementById("ramBar").style.background = ramColor;
-document.getElementById("ramSub").textContent =
-  (ramFree !== null ? ramFree.toFixed(1) : "–") + " GB frei von " + (ramTotal !== null ? ramTotal.toFixed(1) : "–") + " GB";
-
-/* ---- Disk ---- */
-const diskFree = num(p.get("diskFree"), 24);
-const diskFreePct = num(p.get("diskFreePercent"), 41);
-const diskTotal = num(p.get("diskTotal"), 58);
-
-const diskUsedPct = diskFreePct !== null ? 100 - diskFreePct : null;
-const diskColor = usageColor(diskUsedPct);
-document.getElementById("diskVal").textContent = (diskFreePct !== null ? diskFreePct.toFixed(0) : "–") + "% frei";
-document.getElementById("diskVal").style.color = diskColor;
-document.getElementById("diskBar").style.width = (diskUsedPct !== null ? Math.max(0, Math.min(100, diskUsedPct)) : 0) + "%";
-document.getElementById("diskBar").style.background = diskColor;
-document.getElementById("diskSub").textContent =
-  (diskFree !== null ? diskFree.toFixed(0) : "–") + " GB frei von " + (diskTotal !== null ? diskTotal.toFixed(0) : "–") + " GB";
-
-/* ---- Netzwerk ---- */
-const active = str(p.get("active"), "LAN");
-const ipLan  = str(p.get("ipLan"), "192.168.178.138");
-const ipWlan = str(p.get("ipWlan"), "192.168.178.131");
-const lanOk  = bool(p.get("lan"), true);
-const wlanOk = bool(p.get("wlan"), true);
-
-document.getElementById("netVal").textContent = active;
-
-function setNetLine(lineId, dotId, ipId, ok, ip, isActive){
-  const dot = document.getElementById(dotId);
-  dot.className = "dot " + (ok ? "on" : "off");
-  document.getElementById(ipId).textContent = ip || "–";
-  if (isActive) document.getElementById(lineId).classList.add("active");
+function tempColor(t){
+  if (t === null) return "var(--muted)";
+  if (t < 60) return "var(--ok)";
+  if (t < 75) return "var(--warn)";
+  return "var(--error)";
 }
-setNetLine("lanLine", "lanDot", "lanIp", lanOk, ipLan, active.toUpperCase() === "LAN");
-setNetLine("wlanLine", "wlanDot", "wlanIp", wlanOk, ipWlan, active.toUpperCase() === "WLAN");
-
-/* ---- Laufzeit / Throttled ---- */
-const uptimeSec = num(p.get("uptime"), 191736);
-const throttled = bool(p.get("throttled"), false);
-
 function fmtUptime(sec){
-  if (sec === null) return "–";
+  if (sec === null) return null;
   const days = Math.floor(sec / 86400);
   const hours = Math.floor((sec % 86400) / 3600);
   const mins = Math.floor((sec % 3600) / 60);
@@ -279,16 +156,101 @@ function fmtUptime(sec){
   if (hours > 0) return `${hours} Std, ${mins} Min`;
   return `${mins} Min`;
 }
-document.getElementById("uptimeVal").textContent = fmtUptime(uptimeSec);
 
-const badge = document.getElementById("throttleBadge");
-if (throttled) {
-  badge.className = "badge warn";
-  badge.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> Gedrosselt (Spannung/Hitze prüfen)';
-} else {
-  badge.className = "badge ok";
-  badge.innerHTML = '<i class="fa-solid fa-circle-check"></i> Normal';
+function buildHostBlock(prefix, dummy){
+  const name       = str(prefix + "Name", dummy.name);
+  const temp       = num(prefix + "Temp", dummy.temp);
+  const load1      = num(prefix + "Load1", dummy.load1);
+  const ramFree    = num(prefix + "RamFree", dummy.ramFree);
+  const ramFreePct = num(prefix + "RamFreePercent", dummy.ramFreePercent);
+  const ramTotal   = num(prefix + "RamTotal", dummy.ramTotal);
+  const diskFree   = num(prefix + "DiskFree", dummy.diskFree);
+  const diskFreePct= num(prefix + "DiskFreePercent", dummy.diskFreePercent);
+  const diskTotal  = num(prefix + "DiskTotal", dummy.diskTotal);
+  const active     = str(prefix + "Active", dummy.active);
+  const ipLan      = str(prefix + "IpLan", dummy.ipLan);
+  const ipWlan     = str(prefix + "IpWlan", dummy.ipWlan);
+  const uptime     = num(prefix + "Uptime", dummy.uptime);
+  const throttled  = bool(prefix + "Throttled", dummy.throttled);
+
+  let html = `<div class="host-block">`;
+  html += `<div class="host-title"><i class="fa-solid fa-microchip"></i> ${name || "Host"}</div>`;
+
+  let anyRow = false;
+
+  if (temp !== null || load1 !== null) {
+    anyRow = true;
+    const color = temp !== null ? tempColor(temp) : "var(--muted)";
+    const valText = temp !== null ? temp.toFixed(1) + "°C" : "–";
+    html += `<div class="mrow"><span class="mlabel"><i class="fa-solid fa-temperature-half"></i> CPU</span>
+      <span class="mval" style="color:${color}">${valText}${load1 !== null ? `<span class="msub">Last ${load1.toFixed(2)}</span>` : ""}</span></div>`;
+    if (temp !== null) {
+      const pct = Math.max(0, Math.min(100, (temp / 85) * 100));
+      html += `<div class="bar-track"><div class="bar-fill" style="width:${pct}%;background:${color}"></div></div>`;
+    }
+  }
+
+  if (ramFreePct !== null) {
+    anyRow = true;
+    const usedPct = 100 - ramFreePct;
+    const color = usageColor(usedPct);
+    html += `<div class="mrow"><span class="mlabel"><i class="fa-solid fa-memory"></i> RAM</span>
+      <span class="mval" style="color:${color}">${ramFreePct.toFixed(0)}% frei${(ramFree !== null && ramTotal !== null) ? `<span class="msub">${(ramFree/1024).toFixed(1)}/${(ramTotal/1024).toFixed(1)} GB</span>` : ""}</span></div>`;
+    html += `<div class="bar-track"><div class="bar-fill" style="width:${Math.max(0,Math.min(100,usedPct))}%;background:${color}"></div></div>`;
+  }
+
+  if (diskFreePct !== null) {
+    anyRow = true;
+    const usedPct = 100 - diskFreePct;
+    const color = usageColor(usedPct);
+    html += `<div class="mrow"><span class="mlabel"><i class="fa-solid fa-hard-drive"></i> Speicher</span>
+      <span class="mval" style="color:${color}">${diskFreePct.toFixed(0)}% frei${(diskFree !== null && diskTotal !== null) ? `<span class="msub">${diskFree}/${diskTotal} GB</span>` : ""}</span></div>`;
+    html += `<div class="bar-track"><div class="bar-fill" style="width:${Math.max(0,Math.min(100,usedPct))}%;background:${color}"></div></div>`;
+  }
+
+  if (active !== null) {
+    anyRow = true;
+    const ip = active === "WLAN" ? ipWlan : ipLan;
+    html += `<div class="mrow"><span class="mlabel"><i class="fa-solid fa-network-wired"></i> Netzwerk</span>
+      <span class="mval">${active}${ip ? `<span class="msub">${ip}</span>` : ""}</span></div>`;
+  }
+
+  const uptimeText = fmtUptime(uptime);
+  if (uptimeText !== null) {
+    anyRow = true;
+    html += `<div class="mrow"><span class="mlabel"><i class="fa-solid fa-clock-rotate-left"></i> Laufzeit</span>
+      <span class="mval">${uptimeText}</span></div>`;
+  }
+
+  if (throttled === true) {
+    anyRow = true;
+    html += `<div class="warn-badge"><i class="fa-solid fa-triangle-exclamation"></i> Gedrosselt (Spannung/Hitze prüfen)</div>`;
+  }
+
+  if (!anyRow) {
+    html += `<div class="no-data">Keine Daten</div>`;
+  }
+
+  html += `</div>`;
+  return html;
 }
+
+const hostsEl = document.getElementById("hosts");
+hostsEl.innerHTML =
+  buildHostBlock("m", {
+    name: "iobroker-master", temp: 63.7, load1: 0.15,
+    ramFree: 1229, ramFreePercent: 28, ramTotal: 4096,
+    diskFree: 24, diskFreePercent: 41, diskTotal: 58,
+    active: "LAN", ipLan: "192.168.178.138", ipWlan: "192.168.178.131",
+    uptime: 191736, throttled: false
+  }) +
+  buildHostBlock("s", {
+    name: "iobroker-slave-prod-1", temp: null, load1: 0.08,
+    ramFree: 512, ramFreePercent: 25, ramTotal: 2048,
+    diskFree: 12, diskFreePercent: 60, diskTotal: 30,
+    active: "LAN", ipLan: "192.168.178.140", ipWlan: null,
+    uptime: 86400, throttled: false
+  });
 </script>
 </body>
 </html>
