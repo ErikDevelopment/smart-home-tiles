@@ -1,0 +1,229 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kalender</title>
+<style>
+  :root{
+    --fg:#ffffff;
+    --muted:#a0a4aa;
+    --accent:#4da3ff;
+    --ok:#57d38c;
+  }
+  html, body{
+    margin:0;
+    padding:0;
+    width:100%;
+    height:100%;
+    background:transparent;
+    overflow:hidden;
+  }
+  body{
+    background:transparent;
+    color:var(--fg);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+  }
+  .calendar-card{
+    width:380px;
+    padding:22px;
+    box-sizing:border-box;
+    border-radius:24px;
+    background:transparent;
+  }
+  .day-label{
+    font-size:13px;
+    color:var(--muted);
+    text-transform:uppercase;
+    letter-spacing:.04em;
+    margin:16px 0 8px;
+  }
+  .day-label:first-child{ margin-top:0; }
+  .event-row{
+    display:flex;
+    align-items:flex-start;
+    gap:12px;
+    padding:8px 0;
+    border-bottom:1px solid rgba(255,255,255,0.06);
+  }
+  .event-row:last-child{ border-bottom:none; }
+  .event-time{
+    min-width:52px;
+    flex-shrink:0;
+    font-size:14px;
+    color:var(--accent);
+    font-variant-numeric:tabular-nums;
+    white-space:nowrap;
+    padding-top:1px;
+  }
+  .event-main{ flex:1; min-width:0; }
+  .event-title{
+    font-size:15px;
+    font-weight:500;
+    line-height:1.3;
+  }
+  .event-location{
+    margin-top:2px;
+    font-size:12px;
+    color:var(--muted);
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+  .event-row.ongoing .event-time{ color:var(--ok); }
+  .event-tag{
+    align-self:center;
+    flex-shrink:0;
+    font-size:11px;
+    color:var(--ok);
+    border:1px solid var(--ok);
+    border-radius:10px;
+    padding:2px 8px;
+    white-space:nowrap;
+  }
+  .empty-state{
+    color:var(--muted);
+    font-size:14px;
+    padding:12px 0;
+  }
+</style>
+</head>
+<body>
+<main class="calendar-card">
+  <div id="list" class="event-list"></div>
+  <div id="empty" class="empty-state" style="display:none">Keine anstehenden Termine</div>
+</main>
+
+<script>
+/* ======================================================
+   KALENDER-WIDGET
+   Erwarteter URL-Parameter:
+   ?events=<URL-encoded JSON-Array>
+     [{ "title":"...", "start":"2026-09-02T09:30:00",
+        "end":"2026-09-02T10:00:00", "location":"...",
+        "allDay":false }, ...]
+   &max=6   (optional, wie viele Termine max. angezeigt werden)
+====================================================== */
+const p = new URLSearchParams(location.search);
+const maxEvents = Number(p.get("max")) || 6;
+
+/* Beispiel-Termine, falls kein/kein gueltiger events-Parameter da ist */
+const DUMMY_EVENTS = [
+  { title: "Zahnarzt", start: "2026-09-02T09:30:00", end: "2026-09-02T10:00:00", location: "Praxis Dr. Müller" },
+  { title: "Teammeeting", start: "2026-09-02T14:00:00", end: "2026-09-02T15:00:00" },
+  { title: "Wocheneinkauf", start: "2026-09-03T18:00:00" },
+  { title: "Geburtstag Mama", start: "2026-09-06", allDay: true }
+];
+
+let events = [];
+try {
+  const raw = p.get("events");
+  if (raw) events = JSON.parse(raw);
+} catch (e) {
+  events = [];
+}
+if (!Array.isArray(events) || events.length === 0) events = DUMMY_EVENTS;
+
+/* ===============================
+   DATUM SICHER PARSEN
+   (reine Datumsangaben ohne "T" lokal parsen,
+   sonst gibt new Date() je nach Zeitzone
+   einen Tages-Versatz)
+================================ */
+function parseEventDate(str){
+  if (!str || typeof str !== "string") return null;
+  if (str.includes("T")) {
+    const d = new Date(str);
+    return Number.isNaN(d.getTime()) ? null : d;
+  }
+  const parts = str.split("-").map(Number);
+  if (parts.length !== 3 || parts.some(Number.isNaN)) return null;
+  const [y, m, d] = parts;
+  return new Date(y, m - 1, d);
+}
+
+function fmtDayLabel(dateObj, now){
+  const d0 = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const d1 = new Date(dateObj.getFullYear(), dateObj.getMonth(), dateObj.getDate());
+  const diffDays = Math.round((d1 - d0) / 86400000);
+  if (diffDays === 0) return "Heute";
+  if (diffDays === 1) return "Morgen";
+  const weekday = dateObj.toLocaleDateString("de-DE", { weekday: "short" });
+  const date = dateObj.toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit" });
+  return `${weekday}, ${date}`;
+}
+function fmtTime(dateObj){
+  return String(dateObj.getHours()).padStart(2, "0") + ":" + String(dateObj.getMinutes()).padStart(2, "0");
+}
+function escapeHtml(s){
+  return String(s).replace(/[&<>"']/g, c => ({
+    "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+  }[c]));
+}
+
+/* ===============================
+   AUFBEREITEN, FILTERN, SORTIEREN
+================================ */
+const now = new Date();
+const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+const items = events
+  .map(ev => {
+    const start = parseEventDate(ev.start);
+    const end = ev.end ? parseEventDate(ev.end) : null;
+    const allDay = !!ev.allDay || (typeof ev.start === "string" && !ev.start.includes("T"));
+    return {
+      title: ev.title || ev.summary || "Termin",
+      location: ev.location || "",
+      allDay,
+      start,
+      end
+    };
+  })
+  .filter(ev => ev.start) // ungueltige Termine raus
+  .filter(ev => (ev.end || ev.start) >= todayStart) // nicht komplett vorbei
+  .sort((a, b) => a.start - b.start)
+  .slice(0, maxEvents);
+
+/* ===============================
+   RENDERN
+================================ */
+const list = document.getElementById("list");
+const emptyEl = document.getElementById("empty");
+
+if (items.length === 0) {
+  emptyEl.style.display = "";
+} else {
+  let lastLabel = null;
+  items.forEach(ev => {
+    const label = fmtDayLabel(ev.start, now);
+    if (label !== lastLabel) {
+      const groupHead = document.createElement("div");
+      groupHead.className = "day-label";
+      groupHead.textContent = label;
+      list.appendChild(groupHead);
+      lastLabel = label;
+    }
+
+    const ongoing = !!(ev.end && ev.start <= now && now <= ev.end);
+    const row = document.createElement("div");
+    row.className = "event-row" + (ongoing ? " ongoing" : "");
+
+    const timeText = ev.allDay ? "Ganztägig" : fmtTime(ev.start);
+    row.innerHTML =
+      `<div class="event-time">${timeText}</div>` +
+      `<div class="event-main">` +
+        `<div class="event-title">${escapeHtml(ev.title)}</div>` +
+        (ev.location ? `<div class="event-location">${escapeHtml(ev.location)}</div>` : "") +
+      `</div>` +
+      (ongoing ? `<div class="event-tag">Läuft</div>` : "");
+
+    list.appendChild(row);
+  });
+}
+</script>
+</body>
+</html>
