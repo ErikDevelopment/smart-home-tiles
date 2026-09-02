@@ -178,9 +178,8 @@
            SMIL/CSS-Animation mehr - kein Flacker-Risiko). Icon+Farbe
            werden per JS gewaehlt (pickPvIcon), siehe dort. -->
       <text class="pv-icon" id="pvIcon" y="9" fill="var(--sun)">&#xf185;</text>
-      <text class="node-value" y="-16">—</text>
-      <text class="node-sub" y="-26">PV</text>
-      <text class="node-extra" id="pvShare" y="-36"></text>
+      <text class="node-value" y="-26">—</text>
+      <text class="node-sub" y="-16">PV</text>
     </g>
 
     <!-- Batterie (links) -->
@@ -424,18 +423,6 @@ const pvIcon = pickPvIcon(pv, wetterIcon);
 pvIconEl.textContent = pvIcon.glyph;
 pvIconEl.setAttribute("fill", pvIcon.color);
 animateDots("pvDots", "pvPath", pv > 0, true, pv, "var(--sun)");
-
-/* Anteil der PV-Erzeugung am aktuellen Hausverbrauch
-   (nur sinnvoll, wenn tatsaechlich ein Verbrauch > 0 vorliegt) */
-const pvShareEl = document.getElementById("pvShare");
-if (haus > 0) {
-  const share = Math.min(pv / haus, 1) * 100;
-  pvShareEl.textContent = Math.round(share) + "% v. Verbrauch";
-  pvShareEl.setAttribute("fill",
-    share >= 80 ? "var(--ok)" : share >= 40 ? "var(--sun)" : "var(--muted)");
-} else {
-  pvShareEl.textContent = "";
-}
 
 /* ---- Batterie ---- */
 document.getElementById("battFill").setAttribute("height", (battSoc / 100 * 26));
