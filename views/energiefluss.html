@@ -15,6 +15,9 @@
     --ok:#57d38c;
     --error:#ff6b6b;
     --idle:#4a5058;
+    --cons:#ff9f43;
+    --charge:#4da3ff;
+    --soc:#5ec8d8;
   }
   html, body{
     margin:0; padding:0; width:100%; height:100%;
@@ -27,7 +30,7 @@
     display:flex; justify-content:flex-start; align-items:flex-start;
   }
   .tile{
-    width:320px;
+    width:340px;
     padding:20px;
     box-sizing:border-box;
     border-radius:22px;
@@ -106,6 +109,43 @@
 
   .house-body{ fill:#2a2f36; stroke:rgba(255,255,255,0.15); stroke-width:1.5; }
   .house-roof{ fill:#333941; stroke:rgba(255,255,255,0.15); stroke-width:1.5; }
+
+  .stats-grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:10px;
+    margin-top:16px;
+  }
+  .stat-card{
+    min-width:0;
+    background:rgba(255,255,255,0.045);
+    border-radius:14px;
+    padding:12px 12px 9px;
+    box-sizing:border-box;
+  }
+  .stat-title{
+    display:flex; align-items:center; gap:5px;
+    font-size:11px; font-weight:600; color:var(--fg);
+    margin-bottom:1px;
+  }
+  .stat-title .dot-marker{
+    width:6px; height:6px; border-radius:50%; flex:none;
+  }
+  .stat-value{
+    font-size:18px; font-weight:700; color:var(--fg);
+    white-space:nowrap;
+  }
+  .stat-value span{
+    font-size:10.5px; font-weight:500; color:var(--muted); margin-left:2px;
+  }
+  .stat-sub{
+    font-size:9px; color:var(--muted); margin-bottom:6px;
+  }
+  .spark{ width:100%; height:32px; display:block; }
+  .spark-axis{
+    display:flex; justify-content:space-between;
+    font-size:7.5px; color:var(--muted); margin-top:1px;
+  }
 </style>
 </head>
 <body>
@@ -195,6 +235,37 @@
     <g id="wbDots"></g>
 
   </svg>
+
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-title"><span class="dot-marker" style="background:var(--ok)"></span>Produktion</div>
+      <div class="stat-value" id="prodValue">—<span>kWh</span></div>
+      <div class="stat-sub">Heute</div>
+      <svg class="spark" id="prodSpark" viewBox="0 0 240 60" preserveAspectRatio="none"></svg>
+      <div class="spark-axis"><span>00:00</span><span>24:00</span></div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-title"><span class="dot-marker" style="background:var(--cons)"></span>Verbrauch</div>
+      <div class="stat-value" id="consValue">—<span>kWh</span></div>
+      <div class="stat-sub">Heute</div>
+      <svg class="spark" id="consSpark" viewBox="0 0 240 60" preserveAspectRatio="none"></svg>
+      <div class="spark-axis"><span>00:00</span><span>24:00</span></div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-title"><span class="dot-marker" style="background:var(--ok)"></span>Batterie</div>
+      <div class="stat-value" id="battValue">—<span>kWh</span></div>
+      <div class="stat-sub" id="battSubDaily">Netto heute</div>
+      <svg class="spark" id="battSpark" viewBox="0 0 240 60" preserveAspectRatio="none"></svg>
+      <div class="spark-axis"><span>00:00</span><span>24:00</span></div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-title"><span class="dot-marker" style="background:var(--soc)"></span>Ladezustand</div>
+      <div class="stat-value" id="socValue">—</div>
+      <div class="stat-sub">Spanne heute</div>
+      <svg class="spark" id="socSpark" viewBox="0 0 240 60" preserveAspectRatio="none"></svg>
+      <div class="spark-axis"><span>00:00</span><span>24:00</span></div>
+    </div>
+  </div>
 </main>
 
 <script>
@@ -204,7 +275,14 @@
    &batterieSoc=   Ladezustand in % (0-100)
    &netz=          Netzleistung in W (+ = Bezug -> Haus, - = Einspeisung -> Netz)
    &hausverbrauch= Hausverbrauch in W
-   &wallbox=       Wallbox-Ladeleistung in W (immer >=0) */
+   &wallbox=       Wallbox-Ladeleistung in W (immer >=0)
+   &prodToday=     PV-Ertrag heute in kWh
+   &consToday=     Hausverbrauch heute in kWh
+   &battToday=     Batterie-Nettoenergie heute in kWh (+ = netto entladen, - = netto geladen)
+   &prodCurve=     Kommagetrennte PV-Leistungswerte (W) ueber den Tag, ca. alle 15min
+   &consCurve=     Kommagetrennte Verbrauchswerte (W) ueber den Tag, ca. alle 15min
+   &battCurve=     Kommagetrennte Batterieleistungswerte (W, +/-) ueber den Tag, ca. alle 15min
+   &socCurve=      Kommagetrennte Ladezustands-Werte (%, 0-100) ueber den Tag, ca. alle 15min */
 const p = new URLSearchParams(location.search);
 
 function num(val, def){
@@ -213,12 +291,31 @@ function num(val, def){
   return Number.isNaN(n) ? def : n;
 }
 
+function curve(val, def){
+  if (val === null || val === undefined || val === "") return def;
+  const arr = String(val).split(",").map(s => Number(s.replace(",", "."))).filter(n => !Number.isNaN(n));
+  return arr.length >= 2 ? arr : def;
+}
+
 const pv        = num(p.get("pv"), 1622);
 const batterie  = num(p.get("batterie"), 0);
 const battSoc   = num(p.get("batterieSoc"), 100);
 const netz      = num(p.get("netz"), -2400.6);
 const haus      = num(p.get("hausverbrauch"), 0);
 const wallbox   = num(p.get("wallbox"), 0);
+
+const DUMMY_PROD_CURVE = [0,0,0,0,50,320,980,1850,2650,3150,3420,3180,2960,3280,3080,2560,1780,880,180,0];
+const DUMMY_CONS_CURVE = [420,390,360,330,300,350,430,510,600,650,700,680,650,700,760,910,1420,2180,2760,2380];
+const DUMMY_BATT_CURVE = [0,0,0,0,-50,-300,-600,-900,-1100,-1200,-1000,-700,-400,-200,100,400,700,900,600,300];
+const DUMMY_SOC_CURVE  = [38,38,39,40,45,55,65,75,83,89,93,95,96,96,95,93,90,86,83,80];
+
+const prodToday = num(p.get("prodToday"), 24.96);
+const consToday = num(p.get("consToday"), 13.38);
+const battToday = num(p.get("battToday"), -1.42);
+const prodCurve = curve(p.get("prodCurve"), DUMMY_PROD_CURVE);
+const consCurve = curve(p.get("consCurve"), DUMMY_CONS_CURVE);
+const battCurve = curve(p.get("battCurve"), DUMMY_BATT_CURVE);
+const socCurve  = curve(p.get("socCurve"), DUMMY_SOC_CURVE);
 
 function fmtPower(w){
   const abs = Math.abs(w);
@@ -312,6 +409,143 @@ const wbValueEl = document.getElementById("wbGroup").querySelector(".node-value"
 wbValueEl.textContent = fmtPower(wallbox);
 document.getElementById("wbIcon").setAttribute("fill", wallbox > 0 ? "var(--accent)" : "var(--idle)");
 animateDots("wbDots", "wbPath", wallbox > 0, false, wallbox, "var(--accent)");
+
+/* ---- Tageswerte: Produktion / Verbrauch ---- */
+const NS = "http://www.w3.org/2000/svg";
+
+function drawSpark(svgId, values, color, range){
+  const svg = document.getElementById(svgId);
+  svg.innerHTML = "";
+  if (!values || values.length < 2) return;
+
+  const w = 240, h = 60, pad = 4;
+  const min = range ? range[0] : 0;
+  const max = range ? range[1] : Math.max(...values, 1);
+  const span = (max - min) || 1;
+  const stepX = w / (values.length - 1);
+  const pts = values.map((v, i) => [
+    i * stepX,
+    pad + (h - pad * 2) * (1 - (v - min) / span)
+  ]);
+
+  const linePath = "M" + pts.map(pt => pt.join(",")).join(" L");
+  const last = pts[pts.length - 1];
+  const areaPath = linePath + ` L${last[0]},${h} L0,${h} Z`;
+
+  const gradId = svgId + "Grad";
+  const defs = document.createElementNS(NS, "defs");
+  const grad = document.createElementNS(NS, "linearGradient");
+  grad.setAttribute("id", gradId);
+  grad.setAttribute("x1", "0"); grad.setAttribute("y1", "0");
+  grad.setAttribute("x2", "0"); grad.setAttribute("y2", "1");
+  const s1 = document.createElementNS(NS, "stop");
+  s1.setAttribute("offset", "0%"); s1.setAttribute("stop-color", color); s1.setAttribute("stop-opacity", "0.35");
+  const s2 = document.createElementNS(NS, "stop");
+  s2.setAttribute("offset", "100%"); s2.setAttribute("stop-color", color); s2.setAttribute("stop-opacity", "0");
+  grad.appendChild(s1); grad.appendChild(s2);
+  defs.appendChild(grad);
+  svg.appendChild(defs);
+
+  const area = document.createElementNS(NS, "path");
+  area.setAttribute("d", areaPath);
+  area.setAttribute("fill", `url(#${gradId})`);
+  svg.appendChild(area);
+
+  const line = document.createElementNS(NS, "path");
+  line.setAttribute("d", linePath);
+  line.setAttribute("fill", "none");
+  line.setAttribute("stroke", color);
+  line.setAttribute("stroke-width", "2");
+  line.setAttribute("stroke-linecap", "round");
+  line.setAttribute("stroke-linejoin", "round");
+  svg.appendChild(line);
+
+  const dot = document.createElementNS(NS, "circle");
+  dot.setAttribute("cx", last[0]); dot.setAttribute("cy", last[1]); dot.setAttribute("r", "3");
+  dot.setAttribute("fill", color);
+  svg.appendChild(dot);
+}
+
+/* Kurve mit Nulllinie: positive Werte (Entladen) gruen ueber der
+   Mitte, negative Werte (Laden) blau darunter - zwei Flaechen mit
+   gemeinsamer Basislinie bei 0. */
+function drawDivergingSpark(svgId, values, posColor, negColor){
+  const svg = document.getElementById(svgId);
+  svg.innerHTML = "";
+  if (!values || values.length < 2) return;
+
+  const w = 240, h = 60, pad = 4;
+  const maxAbs = Math.max(...values.map(Math.abs), 1);
+  const stepX = w / (values.length - 1);
+  const zeroY = h / 2;
+  const scale = (h / 2 - pad) / maxAbs;
+
+  const pts = values.map((v, i) => [i * stepX, zeroY - v * scale]);
+  const linePath = "M" + pts.map(pt => pt.join(",")).join(" L");
+
+  const posPts = pts.map(([x, y]) => [x, Math.min(y, zeroY)]);
+  const negPts = pts.map(([x, y]) => [x, Math.max(y, zeroY)]);
+  const posArea = "M" + posPts.map(pt => pt.join(",")).join(" L") + ` L${posPts[posPts.length-1][0]},${zeroY} L${posPts[0][0]},${zeroY} Z`;
+  const negArea = "M" + negPts.map(pt => pt.join(",")).join(" L") + ` L${negPts[negPts.length-1][0]},${zeroY} L${negPts[0][0]},${zeroY} Z`;
+
+  const posFill = document.createElementNS(NS, "path");
+  posFill.setAttribute("d", posArea);
+  posFill.setAttribute("fill", posColor);
+  posFill.setAttribute("opacity", "0.25");
+  svg.appendChild(posFill);
+
+  const negFill = document.createElementNS(NS, "path");
+  negFill.setAttribute("d", negArea);
+  negFill.setAttribute("fill", negColor);
+  negFill.setAttribute("opacity", "0.25");
+  svg.appendChild(negFill);
+
+  const zeroLine = document.createElementNS(NS, "line");
+  zeroLine.setAttribute("x1", "0"); zeroLine.setAttribute("x2", w);
+  zeroLine.setAttribute("y1", zeroY); zeroLine.setAttribute("y2", zeroY);
+  zeroLine.setAttribute("stroke", "rgba(255,255,255,0.12)");
+  zeroLine.setAttribute("stroke-width", "1");
+  svg.appendChild(zeroLine);
+
+  const line = document.createElementNS(NS, "path");
+  line.setAttribute("d", linePath);
+  line.setAttribute("fill", "none");
+  line.setAttribute("stroke", "rgba(255,255,255,0.55)");
+  line.setAttribute("stroke-width", "1.6");
+  line.setAttribute("stroke-linecap", "round");
+  line.setAttribute("stroke-linejoin", "round");
+  svg.appendChild(line);
+
+  const last = pts[pts.length - 1];
+  const dot = document.createElementNS(NS, "circle");
+  dot.setAttribute("cx", last[0]); dot.setAttribute("cy", last[1]); dot.setAttribute("r", "3");
+  dot.setAttribute("fill", values[values.length - 1] >= 0 ? posColor : negColor);
+  svg.appendChild(dot);
+}
+
+document.getElementById("prodValue").innerHTML = prodToday.toFixed(2).replace(".", ",") + "<span>kWh</span>";
+document.getElementById("consValue").innerHTML = consToday.toFixed(2).replace(".", ",") + "<span>kWh</span>";
+drawSpark("prodSpark", prodCurve, "var(--ok)");
+drawSpark("consSpark", consCurve, "var(--cons)");
+
+/* ---- Batterie-Karte: Netto-kWh + Lade-/Entladekurve ---- */
+const battValueEl = document.getElementById("battValue");
+battValueEl.innerHTML =
+  (battToday >= 0 ? "+" : "") + battToday.toFixed(2).replace(".", ",") + "<span>kWh</span>";
+battValueEl.style.color = battToday > 0 ? "var(--ok)" : battToday < 0 ? "var(--charge)" : "var(--fg)";
+document.getElementById("battSubDaily").textContent =
+  battToday > 0 ? "Netto entladen" : battToday < 0 ? "Netto geladen" : "Netto heute";
+drawDivergingSpark("battSpark", battCurve, "var(--ok)", "var(--charge)");
+
+/* ---- Ladezustand-Karte: Spanne heute + SOC-Verlauf ---- */
+if (socCurve && socCurve.length >= 2) {
+  const socMin = Math.min(...socCurve);
+  const socMax = Math.max(...socCurve);
+  document.getElementById("socValue").textContent = socMin.toFixed(0) + "–" + socMax.toFixed(0) + "%";
+} else {
+  document.getElementById("socValue").textContent = "—";
+}
+drawSpark("socSpark", socCurve, "var(--soc)", [0, 100]);
 </script>
 </body>
 </html>
