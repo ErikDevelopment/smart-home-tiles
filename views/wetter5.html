@@ -1,0 +1,491 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Wetter</title>
+<link rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<style>
+  :root{
+    --fg:#ffffff;
+    --muted:#a0a4aa;
+    --accent:#4da3ff;
+    --sun:#f5c542;
+    --ok:#57d38c;
+    --error:#ff6b6b;
+    --cons:#ff9f43;
+    --card:rgba(255,255,255,0.045);
+    --card2:rgba(255,255,255,0.03);
+  }
+  html, body{
+    margin:0; padding:0; width:100%; height:100%;
+    background:transparent; overflow:hidden;
+  }
+  body{
+    background:transparent;
+    color:var(--fg);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial;
+    display:flex; justify-content:flex-start; align-items:flex-start;
+  }
+  .tile{
+    width:1300px;
+    padding:0;
+    box-sizing:border-box;
+  }
+  .card{
+    background:var(--card);
+    border-radius:18px;
+    box-sizing:border-box;
+  }
+  .top-row{ display:flex; gap:16px; align-items:stretch; }
+  .left-col{ flex:0 0 520px; display:flex; flex-direction:column; gap:16px; }
+  .right-col{ flex:1; min-width:0; display:flex; flex-direction:column; gap:16px; }
+
+  /* ---- Aktuelles Wetter ---- */
+  .current-card{ padding:20px 24px; }
+  .loc-row{ display:flex; align-items:center; gap:8px; font-size:16px; font-weight:600; }
+  .loc-row i{ color:var(--ok); font-size:15px; }
+  .loc-sub{ font-size:12px; color:var(--muted); margin:2px 0 18px 24px; }
+  .now-row{ display:flex; align-items:center; gap:22px; }
+  .now-icon{ width:100px; height:100px; flex:none; }
+  .now-temp{ font-size:56px; font-weight:700; line-height:1; }
+  .now-temp sup{ font-size:26px; font-weight:600; top:-0.5em; }
+  .now-desc{ font-size:16px; font-weight:600; margin-top:6px; }
+  .now-feels{ font-size:12.5px; color:var(--muted); margin-top:2px; }
+
+  .quick-row{ display:flex; gap:0; margin-top:22px; padding-top:18px; border-top:1px solid rgba(255,255,255,0.07); }
+  .quick-item{ flex:1; display:flex; align-items:center; gap:8px; }
+  .quick-item i{ font-size:15px; color:var(--accent); width:16px; text-align:center; }
+  .quick-val{ font-size:13.5px; font-weight:600; }
+  .quick-label{ font-size:9.5px; color:var(--muted); margin-top:1px; }
+
+  /* ---- Detail-Karten ---- */
+  .details-grid{ display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px; }
+  .detail-card{ padding:14px 14px 12px; }
+  .detail-title{ display:flex; align-items:center; gap:7px; font-size:12px; color:var(--muted); margin-bottom:8px; }
+  .detail-title i{ font-size:13px; }
+  .detail-value{ font-size:22px; font-weight:700; }
+  .detail-value span{ font-size:11px; font-weight:500; color:var(--muted); margin-left:1px; }
+  .detail-sub{ font-size:10.5px; color:var(--muted); margin-top:2px; }
+
+  /* ---- Stuendliche Prognose ---- */
+  .section-card{ padding:16px 18px 18px; }
+  .section-title{ font-size:13.5px; font-weight:600; margin-bottom:12px; }
+  .hourly-row{ display:flex; justify-content:space-between; gap:6px; }
+  .hour-col{ flex:1; min-width:0; display:flex; flex-direction:column; align-items:center; background:var(--card2); border-radius:12px; padding:10px 4px 9px; }
+  .hour-time{ font-size:11px; color:var(--muted); margin-bottom:6px; }
+  .hour-icon{ width:34px; height:34px; margin-bottom:5px; }
+  .hour-temp{ font-size:13px; font-weight:700; }
+  .hour-pop{ display:flex; align-items:center; gap:2px; font-size:9.5px; color:var(--accent); margin-top:5px; }
+  .hour-pop i{ font-size:8px; }
+
+  /* ---- 7-Tage Prognose ---- */
+  .daily-row{ display:flex; align-items:center; gap:12px; padding:9px 0; border-bottom:1px solid rgba(255,255,255,0.05); }
+  .daily-row:last-child{ border-bottom:none; padding-bottom:0; }
+  .daily-row:first-child{ padding-top:0; }
+  .daily-date{ flex:0 0 78px; font-size:12.5px; font-weight:600; }
+  .daily-icon{ width:26px; height:26px; flex:none; }
+  .daily-desc{ flex:0 0 130px; font-size:12px; color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .daily-lo{ flex:0 0 32px; font-size:12.5px; color:var(--muted); text-align:right; }
+  .daily-bar-wrap{ flex:1; min-width:40px; height:5px; border-radius:3px; background:rgba(255,255,255,0.08); position:relative; }
+  .daily-bar{ position:absolute; top:0; bottom:0; border-radius:3px; background:linear-gradient(90deg,var(--accent),var(--cons)); }
+  .daily-hi{ flex:0 0 34px; font-size:12.5px; font-weight:700; }
+  .daily-pop{ flex:0 0 44px; display:flex; align-items:center; justify-content:flex-end; gap:3px; font-size:11px; color:var(--accent); }
+  .daily-pop i{ font-size:9px; }
+
+  .footer{ text-align:center; margin-top:16px; font-size:11.5px; color:var(--muted); display:flex; align-items:center; justify-content:center; gap:6px; }
+  .footer i{ font-size:11px; }
+</style>
+</head>
+<body>
+<main class="tile">
+
+  <div class="top-row">
+    <div class="left-col">
+      <div class="card current-card">
+        <div class="loc-row"><i class="fa-solid fa-location-dot"></i><span id="locName">—</span></div>
+        <div class="loc-sub">Aktuelles Wetter</div>
+        <div class="now-row">
+          <div class="now-icon" id="nowIcon"></div>
+          <div>
+            <div class="now-temp"><span id="nowTemp">—</span><sup>°C</sup></div>
+            <div class="now-desc" id="nowDesc">—</div>
+            <div class="now-feels" id="nowFeels">—</div>
+          </div>
+        </div>
+        <div class="quick-row">
+          <div class="quick-item">
+            <i class="fa-solid fa-wind"></i>
+            <div><div class="quick-val" id="windSpeed">—</div><div class="quick-label">Wind</div></div>
+          </div>
+          <div class="quick-item">
+            <i class="fa-solid fa-compass"></i>
+            <div><div class="quick-val" id="windDir">—</div><div class="quick-label">Richtung</div></div>
+          </div>
+          <div class="quick-item">
+            <i class="fa-solid fa-droplet"></i>
+            <div><div class="quick-val" id="humidityQuick">—</div><div class="quick-label">Luftfeuchtigkeit</div></div>
+          </div>
+          <div class="quick-item">
+            <i class="fa-solid fa-gauge"></i>
+            <div><div class="quick-val" id="pressure">—</div><div class="quick-label">Luftdruck</div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="details-grid">
+        <div class="card detail-card">
+          <div class="detail-title"><i class="fa-solid fa-temperature-half" style="color:var(--cons)"></i>Temperatur</div>
+          <div class="detail-value" id="dTemp">—<span>°C</span></div>
+          <div class="detail-sub" id="dTempSub">—</div>
+        </div>
+        <div class="card detail-card">
+          <div class="detail-title"><i class="fa-solid fa-droplet" style="color:var(--accent)"></i>Luftfeuchtigkeit</div>
+          <div class="detail-value" id="dHumidity">—<span>%</span></div>
+          <div class="detail-sub" id="dHumiditySub">—</div>
+        </div>
+        <div class="card detail-card">
+          <div class="detail-title"><i class="fa-solid fa-eye" style="color:#c084fc"></i>Sichtweite</div>
+          <div class="detail-value" id="dVisibility">—<span>km</span></div>
+          <div class="detail-sub" id="dVisibilitySub">—</div>
+        </div>
+        <div class="card detail-card">
+          <div class="detail-title"><i class="fa-solid fa-sun" style="color:var(--sun)"></i>UV-Index</div>
+          <div class="detail-value" id="dUv">—</div>
+          <div class="detail-sub" id="dUvSub">—</div>
+        </div>
+        <div class="card detail-card">
+          <div class="detail-title"><i class="fa-solid fa-cloud" style="color:var(--muted)"></i>Wolkenbedeckung</div>
+          <div class="detail-value" id="dClouds">—<span>%</span></div>
+          <div class="detail-sub" id="dCloudsSub">—</div>
+        </div>
+        <div class="card detail-card">
+          <div class="detail-title"><i class="fa-solid fa-cloud-rain" style="color:var(--accent)"></i>Niederschlag</div>
+          <div class="detail-value" id="dRain">—<span>mm</span></div>
+          <div class="detail-sub">Heute</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="right-col">
+      <div class="card section-card">
+        <div class="section-title">Stündliche Prognose</div>
+        <div class="hourly-row" id="hourlyRow"></div>
+      </div>
+      <div class="card section-card">
+        <div class="section-title">7-Tage Prognose</div>
+        <div id="dailyList"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer"><i class="fa-solid fa-arrows-rotate"></i><span id="lastUpdate">—</span></div>
+</main>
+
+<script>
+/* URL-Parameter (alles optional, ohne Parameter laufen Dummy-Daten):
+   Zahlen-Listen (Kommas):    hourTemps, hourPop, dayLo, dayHi, dayPop
+   Text-Listen (Pipe "|"):    hourTimes, hourIcons, dayNames, dayIcons, dayDesc
+   (Text-Listen nutzen "|" statt ",", weil z.B. Tagesnamen selbst
+   ein Komma enthalten koennen, z.B. "Mi, 03.09.")
+
+   ?loc=            Ortsname, z.B. "Kriftel, Deutschland"
+   &temp=           Aktuelle Temperatur in Grad C
+   &feels=          Gefuehlte Temperatur in Grad C
+   &desc=           Wetterbeschreibung, z.B. "Bewölkt"
+   &icon=           OpenWeatherMap Icon-Code, z.B. "04d"
+   &wind=           Windgeschwindigkeit in km/h
+   &windDir=        Windrichtung als Kompass-Text, z.B. "SW"
+   &humidity=       Luftfeuchtigkeit in %
+   &pressure=       Luftdruck in hPa
+   &tempMin=        Tagestief in Grad C
+   &tempMax=        Tageshoch in Grad C
+   &visibility=     Sichtweite in km
+   &uv=             UV-Index
+   &clouds=         Wolkenbedeckung in %
+   &rain=           Niederschlag heute in mm
+   &update=         Zeitstempel der letzten Aktualisierung als Text
+   &hourTimes=      Uhrzeiten der Stundenprognose, z.B. "13:00|14:00|..."
+   &hourIcons=      OWM Icon-Codes je Stunde
+   &hourTemps=      Temperaturen je Stunde
+   &hourPop=        Niederschlagswahrscheinlichkeit je Stunde in %
+   &dayNames=       Tagesnamen der 7-Tage-Prognose
+   &dayIcons=       OWM Icon-Codes je Tag
+   &dayDesc=        Wetterbeschreibung je Tag
+   &dayLo=          Tagestief je Tag
+   &dayHi=          Tageshoch je Tag
+   &dayPop=         Niederschlagswahrscheinlichkeit je Tag in % */
+const NS = "http://www.w3.org/2000/svg";
+const p = new URLSearchParams(location.search);
+const live = p.toString().length > 0;
+
+function str(val, def){ return (val === null || val === undefined || val === "") ? def : val; }
+function num(val, def){
+  if (val === null || val === undefined || val === "") return def;
+  const n = Number(String(val).replace(",", "."));
+  return Number.isNaN(n) ? def : n;
+}
+/* Text-Listen werden mit "|" getrennt, nicht mit "," - Tagesnamen
+   wie "Mi, 03.09." enthalten selbst ein Komma und wuerden sonst
+   falsch aufgesplittet. */
+function list(val, def){
+  if (val === null || val === undefined || val === "") return live ? [] : def;
+  return String(val).split("|");
+}
+function numList(val, def){
+  if (val === null || val === undefined || val === "") return live ? [] : def;
+  const arr = String(val).split(",").map(s => Number(s.replace(",", "."))).filter(n => !Number.isNaN(n));
+  return arr;
+}
+
+/* ---------------------------------------------------------------
+   Wetter-Icons als kleine, selbstgezeichnete SVGs (kein externes
+   Icon-Set noetig). owmToKey() ordnet OpenWeatherMap-Icon-Codes
+   (z.B. "04d", "10n") einer der Grundformen zu.
+--------------------------------------------------------------- */
+function owmToKey(code){
+  if (!code) return "cloudy";
+  const c = String(code).slice(0, 2);
+  const night = String(code).endsWith("n");
+  const map = {
+    "01": night ? "clear-night" : "clear",
+    "02": night ? "pcloudy-night" : "pcloudy",
+    "03": "cloudy",
+    "04": "cloudy",
+    "09": "showers",
+    "10": "rain",
+    "11": "storm",
+    "13": "snow",
+    "50": "fog"
+  };
+  return map[c] || "cloudy";
+}
+
+function svgIcon(key){
+  const sun = `<circle cx="24" cy="24" r="9" fill="url(#sunG)"/>
+    ${[0,45,90,135,180,225,270,315].map(a=>`<line x1="0" y1="-15" x2="0" y2="-19" stroke="var(--sun)" stroke-width="2" stroke-linecap="round" transform="translate(24,24) rotate(${a})"/>`).join("")}`;
+  const moon = `<path d="M28,14a11,11 0 1 0 6,20 a9,9 0 0 1 -6,-20Z" fill="#c9d4e6"/>`;
+  const cloud = (x=24,y=26,scale=1,fill="url(#cloudG)")=>`<g transform="translate(${x},${y}) scale(${scale})"><ellipse cx="-8" cy="2" rx="9" ry="7.5" fill="${fill}"/><ellipse cx="4" cy="-3" rx="11" ry="9.5" fill="${fill}"/><ellipse cx="14" cy="3" rx="8" ry="6.5" fill="${fill}"/><rect x="-16" y="2" width="38" height="9" rx="4.5" fill="${fill}"/></g>`;
+  const drop = (x,y,s=1)=>`<path transform="translate(${x},${y}) scale(${s})" d="M0,0 C3,4 5,7 5,10 a5,5 0 1 1 -10,0 C-5,7 -3,4 0,0 Z" fill="#4da3ff"/>`;
+  const bolt = `<path d="M25,26 L18,38 L23,38 L20,48 L31,33 L25,33 L29,26 Z" fill="#f5c542"/>`;
+  const flake = (x,y)=>`<g transform="translate(${x},${y})">${[0,60,120].map(a=>`<line x1="-4" y1="0" x2="4" y2="0" stroke="#dfe8f5" stroke-width="1.6" stroke-linecap="round" transform="rotate(${a})"/>`).join("")}</g>`;
+  const fogLines = `<line x1="6" y1="18" x2="42" y2="18" stroke="#8b93a1" stroke-width="2.4" stroke-linecap="round"/><line x1="10" y1="26" x2="38" y2="26" stroke="#8b93a1" stroke-width="2.4" stroke-linecap="round"/><line x1="6" y1="34" x2="42" y2="34" stroke="#8b93a1" stroke-width="2.4" stroke-linecap="round"/>`;
+
+  const bodies = {
+    "clear": sun,
+    "clear-night": moon,
+    "pcloudy": sun + cloud(27,29,0.62),
+    "pcloudy-night": moon + cloud(27,29,0.62),
+    "cloudy": cloud(24,24,0.95),
+    "showers": cloud(24,20,0.85) + drop(15,38,0.9) + drop(28,40,0.9),
+    "rain": cloud(24,18,0.85) + drop(13,34,0.85) + drop(24,38,0.85) + drop(35,34,0.85),
+    "storm": cloud(24,18,0.85) + bolt,
+    "snow": cloud(24,18,0.85) + flake(15,36) + flake(26,40) + flake(35,34),
+    "fog": fogLines
+  };
+  return `<svg viewBox="0 0 48 48" xmlns="${NS}">
+    <defs>
+      <radialGradient id="sunG" cx="35%" cy="32%" r="70%">
+        <stop offset="0%" stop-color="#fff6d8"/><stop offset="55%" stop-color="var(--sun)"/><stop offset="100%" stop-color="#d98f1f"/>
+      </radialGradient>
+      <linearGradient id="cloudG" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#e9edf3"/><stop offset="100%" stop-color="#c3cad6"/>
+      </linearGradient>
+    </defs>
+    ${bodies[key] || bodies["cloudy"]}
+  </svg>`;
+}
+
+function mountIcon(el, owmCode){
+  el.innerHTML = svgIcon(owmToKey(owmCode));
+}
+
+/* ---------------------------------------------------------------
+   Dummy-Daten (nur wenn KEINE Parameter da sind - reines Preview)
+--------------------------------------------------------------- */
+const DUMMY = {
+  loc: "Kriftel, Deutschland",
+  temp: 20, feels: 21, desc: "Bewölkt", icon: "04d",
+  wind: 11, windDir: "SW", humidity: 72, pressure: 1015,
+  tempMin: 16, tempMax: 22, visibility: 10, uv: 3, clouds: 87, rain: 0.0,
+  update: "02.09.2026, 12:45",
+  hourTimes: ["13:00","14:00","15:00","16:00","17:00","18:00","19:00","20:00"],
+  hourIcons: ["04d","04d","02d","02d","02d","02d","03d","03d"],
+  hourTemps: [21,21,22,22,21,20,19,18],
+  hourPop: [0,0,0,0,0,0,0,0],
+  dayNames: ["Mi, 03.09.","Do, 04.09.","Fr, 05.09.","Sa, 06.09.","So, 07.09.","Mo, 08.09.","Di, 09.09."],
+  dayIcons: ["02d","01d","04d","10d","10d","04d","02d"],
+  dayDesc: ["Teilweise bewölkt","Sonnig","Bewölkt","Leichter Regen","Regen","Bewölkt","Teilweise bewölkt"],
+  dayLo: [16,15,16,14,13,13,14],
+  dayHi: [23,26,24,19,18,20,22],
+  dayPop: [10,5,15,60,80,20,10]
+};
+
+/* ---------------------------------------------------------------
+   Werte aus URL-Parametern lesen
+--------------------------------------------------------------- */
+const loc      = str(p.get("loc"), DUMMY.loc);
+const temp     = num(p.get("temp"), DUMMY.temp);
+const feels    = num(p.get("feels"), DUMMY.feels);
+const desc     = str(p.get("desc"), DUMMY.desc);
+const icon     = str(p.get("icon"), DUMMY.icon);
+const wind     = num(p.get("wind"), DUMMY.wind);
+const windDir  = str(p.get("windDir"), DUMMY.windDir);
+const humidity = num(p.get("humidity"), DUMMY.humidity);
+const pressure = num(p.get("pressure"), DUMMY.pressure);
+const tempMin  = num(p.get("tempMin"), DUMMY.tempMin);
+const tempMax  = num(p.get("tempMax"), DUMMY.tempMax);
+const visibility = num(p.get("visibility"), DUMMY.visibility);
+const uv       = num(p.get("uv"), DUMMY.uv);
+const clouds   = num(p.get("clouds"), DUMMY.clouds);
+const rain     = num(p.get("rain"), DUMMY.rain);
+const lastUpdate = str(p.get("update"), DUMMY.update);
+
+const hourTimes = list(p.get("hourTimes"), DUMMY.hourTimes);
+const hourIcons = list(p.get("hourIcons"), DUMMY.hourIcons);
+const hourTemps = numList(p.get("hourTemps"), DUMMY.hourTemps);
+const hourPop   = numList(p.get("hourPop"), DUMMY.hourPop);
+
+const dayNames = list(p.get("dayNames"), DUMMY.dayNames);
+const dayIcons = list(p.get("dayIcons"), DUMMY.dayIcons);
+const dayDesc  = list(p.get("dayDesc"), DUMMY.dayDesc);
+const dayLo    = numList(p.get("dayLo"), DUMMY.dayLo);
+const dayHi    = numList(p.get("dayHi"), DUMMY.dayHi);
+const dayPop   = numList(p.get("dayPop"), DUMMY.dayPop);
+
+/* ---------------------------------------------------------------
+   Aktuelles Wetter befuellen
+--------------------------------------------------------------- */
+document.getElementById("locName").textContent = loc;
+document.getElementById("nowTemp").textContent = Math.round(temp);
+document.getElementById("nowDesc").textContent = desc;
+document.getElementById("nowFeels").textContent = "Gefühlt wie " + Math.round(feels) + "°C";
+mountIcon(document.getElementById("nowIcon"), icon);
+
+document.getElementById("windSpeed").textContent = Math.round(wind) + " km/h";
+document.getElementById("windDir").textContent = windDir;
+document.getElementById("humidityQuick").textContent = Math.round(humidity) + "%";
+document.getElementById("pressure").textContent = Math.round(pressure) + " hPa";
+
+/* ---------------------------------------------------------------
+   Detail-Karten
+--------------------------------------------------------------- */
+document.getElementById("dTemp").innerHTML = Math.round(temp) + "<span>°C</span>";
+document.getElementById("dTempSub").textContent = `Min: ${Math.round(tempMin)}°C  Max: ${Math.round(tempMax)}°C`;
+
+document.getElementById("dHumidity").innerHTML = Math.round(humidity) + "<span>%</span>";
+document.getElementById("dHumiditySub").textContent =
+  humidity < 30 ? "Trocken" : humidity <= 75 ? "Komfortabel" : "Feucht";
+
+document.getElementById("dVisibility").innerHTML = visibility.toFixed(0) + "<span>km</span>";
+document.getElementById("dVisibilitySub").textContent =
+  visibility >= 8 ? "Sehr gut" : visibility >= 4 ? "Gut" : visibility >= 1 ? "Eingeschränkt" : "Schlecht";
+
+document.getElementById("dUv").textContent = Math.round(uv);
+document.getElementById("dUvSub").textContent =
+  uv <= 2 ? "Niedrig" : uv <= 5 ? "Mäßig" : uv <= 7 ? "Hoch" : uv <= 10 ? "Sehr hoch" : "Extrem";
+
+document.getElementById("dClouds").innerHTML = Math.round(clouds) + "<span>%</span>";
+document.getElementById("dCloudsSub").textContent =
+  clouds < 20 ? "Klar" : clouds < 60 ? "Teilweise bewölkt" : "Bewölkt";
+
+document.getElementById("dRain").innerHTML = rain.toFixed(1) + "<span>mm</span>";
+
+document.getElementById("lastUpdate").textContent = "Letzte Aktualisierung: " + lastUpdate;
+
+/* ---------------------------------------------------------------
+   Stuendliche Prognose
+--------------------------------------------------------------- */
+const hourlyRow = document.getElementById("hourlyRow");
+hourTimes.forEach((t, i) => {
+  const col = document.createElement("div");
+  col.className = "hour-col";
+
+  const timeDiv = document.createElement("div");
+  timeDiv.className = "hour-time";
+  timeDiv.textContent = t;
+  col.appendChild(timeDiv);
+
+  const iconDiv = document.createElement("div");
+  iconDiv.className = "hour-icon";
+  mountIcon(iconDiv, hourIcons[i]);
+  col.appendChild(iconDiv);
+
+  const tempDiv = document.createElement("div");
+  tempDiv.className = "hour-temp";
+  tempDiv.textContent = hourTemps[i] !== undefined ? Math.round(hourTemps[i]) + "°C" : "—";
+  col.appendChild(tempDiv);
+
+  const pop = hourPop[i] !== undefined ? Math.round(hourPop[i]) : null;
+  const popDiv = document.createElement("div");
+  popDiv.className = "hour-pop";
+  popDiv.innerHTML = `<i class="fa-solid fa-droplet"></i>${pop !== null ? pop + "%" : "—"}`;
+  col.appendChild(popDiv);
+
+  hourlyRow.appendChild(col);
+});
+
+/* ---------------------------------------------------------------
+   7-Tage Prognose
+--------------------------------------------------------------- */
+const dailyList = document.getElementById("dailyList");
+const weekLo = dayLo.length ? Math.min(...dayLo) : 0;
+const weekHi = dayHi.length ? Math.max(...dayHi) : 1;
+const weekSpan = (weekHi - weekLo) || 1;
+
+dayNames.forEach((d, i) => {
+  const row = document.createElement("div");
+  row.className = "daily-row";
+
+  const dateDiv = document.createElement("div");
+  dateDiv.className = "daily-date";
+  dateDiv.textContent = d;
+  row.appendChild(dateDiv);
+
+  const iconDiv = document.createElement("div");
+  iconDiv.className = "daily-icon";
+  mountIcon(iconDiv, dayIcons[i]);
+  row.appendChild(iconDiv);
+
+  const descDiv = document.createElement("div");
+  descDiv.className = "daily-desc";
+  descDiv.textContent = dayDesc[i] || "";
+  row.appendChild(descDiv);
+
+  const lo = dayLo[i], hi = dayHi[i];
+
+  const loDiv = document.createElement("div");
+  loDiv.className = "daily-lo";
+  loDiv.textContent = lo !== undefined ? Math.round(lo) + "°C" : "—";
+  row.appendChild(loDiv);
+
+  const barWrap = document.createElement("div");
+  barWrap.className = "daily-bar-wrap";
+  if (lo !== undefined && hi !== undefined) {
+    const left = ((lo - weekLo) / weekSpan) * 100;
+    const width = Math.max(((hi - lo) / weekSpan) * 100, 6);
+    const bar = document.createElement("div");
+    bar.className = "daily-bar";
+    bar.style.left = left + "%";
+    bar.style.width = width + "%";
+    barWrap.appendChild(bar);
+  }
+  row.appendChild(barWrap);
+
+  const hiDiv = document.createElement("div");
+  hiDiv.className = "daily-hi";
+  hiDiv.textContent = hi !== undefined ? Math.round(hi) + "°C" : "—";
+  row.appendChild(hiDiv);
+
+  const pop = dayPop[i] !== undefined ? Math.round(dayPop[i]) : null;
+  const popDiv = document.createElement("div");
+  popDiv.className = "daily-pop";
+  popDiv.innerHTML = `<i class="fa-solid fa-droplet"></i>${pop !== null ? pop + "%" : "—"}`;
+  row.appendChild(popDiv);
+
+  dailyList.appendChild(row);
+});
+</script>
+</body>
+</html>
