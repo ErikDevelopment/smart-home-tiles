@@ -98,21 +98,6 @@
     fill:var(--sun);
     opacity:0;
   }
-  .sun-active .sun-glow{
-    animation:sunPulse 2.4s ease-in-out infinite;
-  }
-  .sun-active .sun-glow-outer{
-    animation:sunPulseOuter 2.4s ease-in-out infinite;
-    animation-delay:.5s;
-  }
-  @keyframes sunPulse{
-    0%,100%{ opacity:0.12; r:22; }
-    50%{ opacity:0.26; r:27; }
-  }
-  @keyframes sunPulseOuter{
-    0%,100%{ opacity:0.05; r:29; }
-    50%{ opacity:0.13; r:36; }
-  }
 
   .batt-fill{ transition:height .6s ease, y .6s ease, fill .3s ease; }
 
@@ -191,8 +176,27 @@
 
     <!-- Sonne / PV (oben) -->
     <g id="sunGroup" transform="translate(150,44)">
-      <circle class="sun-glow-outer" r="29"/>
-      <circle class="sun-glow" r="22"/>
+      <!-- Puls-Animation laeuft ueber SMIL (animateTransform/animate,
+           begin="indefinite", per JS gestartet), NICHT ueber CSS-
+           Keyframes auf dem "r"-Attribut. "r" ist eine SVG-Geometrie-
+           Eigenschaft - eine CSS-Animation davon zwingt den Browser,
+           bei jedem Frame Layout/Geometrie neu zu berechnen statt nur
+           zu compositen, was auf schwaecheren Geraeten (Kiosk-Tablet
+           o.ae.) zu Rucklern/Flackern fuehren kann, das sich bis ins
+           umgebende Iframe fortpflanzt. transform+opacity sind reine
+           Compositor-Eigenschaften und damit unkritisch. -->
+      <circle class="sun-glow-outer" id="sunGlowOuter" r="29">
+        <animateTransform id="sunGlowOuterScale" attributeName="transform" type="scale"
+          values="1;1.241;1" keyTimes="0;0.5;1" dur="2.4s" begin="indefinite" repeatCount="indefinite"/>
+        <animate id="sunGlowOuterOpacity" attributeName="opacity"
+          values="0.05;0.13;0.05" keyTimes="0;0.5;1" dur="2.4s" begin="indefinite" repeatCount="indefinite"/>
+      </circle>
+      <circle class="sun-glow" id="sunGlowInner" r="22">
+        <animateTransform id="sunGlowInnerScale" attributeName="transform" type="scale"
+          values="1;1.227;1" keyTimes="0;0.5;1" dur="2.4s" begin="indefinite" repeatCount="indefinite"/>
+        <animate id="sunGlowInnerOpacity" attributeName="opacity"
+          values="0.12;0.26;0.12" keyTimes="0;0.5;1" dur="2.4s" begin="indefinite" repeatCount="indefinite"/>
+      </circle>
       <g id="sunRays">
         <line class="sun-ray" x1="0.0" y1="-12.0" x2="0.0" y2="-20.0" stroke-width="2.4"/>
         <line class="sun-ray" x1="6.5" y1="-11.3" x2="8.5" y2="-14.7" stroke-width="1.6"/>
@@ -389,7 +393,18 @@ function animateDots(groupId, pathId, active, forward, watt, color){
 
 /* ---- PV ---- */
 document.getElementById("sunGroup").querySelector(".node-value").textContent = fmtPower(pv);
-if (pv > 0) document.getElementById("sunGroup").classList.add("sun-active");
+if (pv > 0) {
+  document.getElementById("sunGroup").classList.add("sun-active");
+  /* SMIL-Animationen (begin="indefinite" im SVG) erst jetzt per JS
+     starten - so laufen sie nur, wenn die Sonne wirklich aktiv ist,
+     und starten nicht schon "unsichtbar" beim Laden im Hintergrund. */
+  document.getElementById("sunGlowOuterScale").beginElement();
+  document.getElementById("sunGlowOuterOpacity").beginElement();
+  setTimeout(() => {
+    document.getElementById("sunGlowInnerScale").beginElement();
+    document.getElementById("sunGlowInnerOpacity").beginElement();
+  }, 500);
+}
 animateDots("pvDots", "pvPath", pv > 0, true, pv, "var(--sun)");
 
 /* Anteil der PV-Erzeugung am aktuellen Hausverbrauch
