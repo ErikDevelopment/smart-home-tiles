@@ -30,11 +30,20 @@
     display:flex; justify-content:flex-start; align-items:flex-start;
   }
   .tile{
-    width:340px;
+    width:600px;
     padding:20px;
     box-sizing:border-box;
     border-radius:22px;
     background:transparent;
+  }
+  .layout{
+    display:flex;
+    align-items:flex-start;
+    gap:18px;
+  }
+  .diagram-col{
+    flex:0 0 220px;
+    width:220px;
   }
   .head{
     display:flex; align-items:center; gap:8px;
@@ -111,10 +120,11 @@
   .house-roof{ fill:#333941; stroke:rgba(255,255,255,0.15); stroke-width:1.5; }
 
   .stats-grid{
+    flex:1;
+    min-width:0;
     display:grid;
     grid-template-columns:1fr 1fr;
     gap:10px;
-    margin-top:16px;
   }
   .stat-card{
     min-width:0;
@@ -152,6 +162,8 @@
 <main class="tile">
   <div class="head"><i class="fa-solid fa-solar-panel"></i> Energiefluss</div>
 
+  <div class="layout">
+  <div class="diagram-col">
   <svg class="diagram" viewBox="0 0 300 300" xmlns="http://www.w3.org/2000/svg">
 
     <defs>
@@ -235,6 +247,7 @@
     <g id="wbDots"></g>
 
   </svg>
+  </div>
 
   <div class="stats-grid">
     <div class="stat-card">
@@ -266,6 +279,7 @@
       <div class="spark-axis"><span>00:00</span><span>24:00</span></div>
     </div>
   </div>
+  </div>
 </main>
 
 <script>
@@ -284,6 +298,13 @@
    &battCurve=     Kommagetrennte Batterieleistungswerte (W, +/-) ueber den Tag, ca. alle 15min
    &socCurve=      Kommagetrennte Ladezustands-Werte (%, 0-100) ueber den Tag, ca. alle 15min */
 const p = new URLSearchParams(location.search);
+/* Sobald IRGENDEIN Parameter da ist, laeuft die Kachel "live" -
+   dann werden fehlende/zu kurze Kurven NICHT mehr mit der vollen
+   Demo-Kurve aufgefuellt (das saehe nach einem kompletten Tages-
+   verlauf aus, obwohl z.B. erst seit 20 Minuten echte Werte
+   gespeichert werden), sondern zeigen nur die echten Punkte -
+   auch wenn das anfangs nur 1-2 sind. */
+const live = p.toString().length > 0;
 
 function num(val, def){
   if (val === null || val === undefined || val === "") return def;
@@ -292,9 +313,10 @@ function num(val, def){
 }
 
 function curve(val, def){
-  if (val === null || val === undefined || val === "") return def;
+  if (val === null || val === undefined || val === "") return live ? [] : def;
   const arr = String(val).split(",").map(s => Number(s.replace(",", "."))).filter(n => !Number.isNaN(n));
-  return arr.length >= 2 ? arr : def;
+  if (arr.length >= 2) return arr;
+  return live ? arr : def;
 }
 
 const pv        = num(p.get("pv"), 1622);
