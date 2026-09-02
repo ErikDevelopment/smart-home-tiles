@@ -92,7 +92,7 @@
   .pv-icon{
     font-family:"Font Awesome 6 Free";
     font-weight:900;
-    font-size:34px;
+    font-size:26px;
     text-anchor:middle;
   }
 
@@ -146,7 +146,7 @@
 
   <div class="layout">
   <div class="diagram-col">
-  <svg class="diagram" viewBox="0 -50 300 350" xmlns="http://www.w3.org/2000/svg">
+  <svg class="diagram" viewBox="0 0 300 300" xmlns="http://www.w3.org/2000/svg">
 
     <!-- Verbindungslinien -->
     <path id="pvPath"   class="spoke-line" d="M150,64 L150,132"/>
@@ -167,16 +167,20 @@
          statt darunter wie bei den anderen Knoten: darunter waere
          nicht genug Platz, bevor die Fluss-Linie mit den animierten
          Punkten (pvPath, ab y=64) beginnt - der Text wuerde die
-         laufenden Punkte ueberlappen. Das SVG-viewBox ist dafuer
-         oben um 50 Einheiten erweitert (0 -50 300 350). -->
+         laufenden Punkte ueberlappen. Passt hier in den vorhandenen
+         Platz (viewBox unveraendert 0 0 300 300 - die vorherige
+         viewBox-Erweiterung hat das Seitenverhaeltnis der ganzen
+         Grafik veraendert und dadurch die Kachel insgesamt hoeher
+         gemacht, was in einem fest hohen Iframe die Wallbox unten
+         abgeschnitten hat). Icon dafuer etwas kleiner (26 statt 34px). -->
     <g id="sunGroup" transform="translate(150,44)">
       <!-- Statisches Wetter-Icon statt animierter Sonnengrafik (kein
            SMIL/CSS-Animation mehr - kein Flacker-Risiko). Icon+Farbe
            werden per JS gewaehlt (pickPvIcon), siehe dort. -->
-      <text class="pv-icon" id="pvIcon" y="11" fill="var(--sun)">&#xf185;</text>
-      <text class="node-value" y="-20">—</text>
-      <text class="node-sub" y="-31">PV</text>
-      <text class="node-extra" id="pvShare" y="-42"></text>
+      <text class="pv-icon" id="pvIcon" y="9" fill="var(--sun)">&#xf185;</text>
+      <text class="node-value" y="-16">—</text>
+      <text class="node-sub" y="-26">PV</text>
+      <text class="node-extra" id="pvShare" y="-36"></text>
     </g>
 
     <!-- Batterie (links) -->
