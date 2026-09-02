@@ -89,14 +89,11 @@
     filter:drop-shadow(0 0 2px rgba(0,0,0,0.4));
   }
 
-  .sun-ray{
-    stroke:var(--sun);
-    stroke-linecap:round;
-  }
-  .sun-core{ fill:url(#sunCoreGrad); }
-  .sun-glow, .sun-glow-outer{
-    fill:var(--sun);
-    opacity:0;
+  .pv-icon{
+    font-family:"Font Awesome 6 Free";
+    font-weight:900;
+    font-size:34px;
+    text-anchor:middle;
   }
 
   .batt-fill{ transition:height .6s ease, y .6s ease, fill .3s ease; }
@@ -151,14 +148,6 @@
   <div class="diagram-col">
   <svg class="diagram" viewBox="0 0 300 300" xmlns="http://www.w3.org/2000/svg">
 
-    <defs>
-      <radialGradient id="sunCoreGrad" cx="35%" cy="32%" r="68%">
-        <stop offset="0%"  stop-color="#fff6d8"/>
-        <stop offset="45%" stop-color="var(--sun)"/>
-        <stop offset="100%" stop-color="#d98f1f"/>
-      </radialGradient>
-    </defs>
-
     <!-- Verbindungslinien -->
     <path id="pvPath"   class="spoke-line" d="M150,64 L150,132"/>
     <path id="battPath" class="spoke-line" d="M64,150 L118,150"/>
@@ -176,44 +165,10 @@
 
     <!-- Sonne / PV (oben) -->
     <g id="sunGroup" transform="translate(150,44)">
-      <!-- Puls-Animation laeuft ueber SMIL (animateTransform/animate,
-           begin="indefinite", per JS gestartet), NICHT ueber CSS-
-           Keyframes auf dem "r"-Attribut. "r" ist eine SVG-Geometrie-
-           Eigenschaft - eine CSS-Animation davon zwingt den Browser,
-           bei jedem Frame Layout/Geometrie neu zu berechnen statt nur
-           zu compositen, was auf schwaecheren Geraeten (Kiosk-Tablet
-           o.ae.) zu Rucklern/Flackern fuehren kann, das sich bis ins
-           umgebende Iframe fortpflanzt. transform+opacity sind reine
-           Compositor-Eigenschaften und damit unkritisch. -->
-      <circle class="sun-glow-outer" id="sunGlowOuter" r="29">
-        <animateTransform id="sunGlowOuterScale" attributeName="transform" type="scale"
-          values="1;1.241;1" keyTimes="0;0.5;1" dur="2.4s" begin="indefinite" repeatCount="indefinite"/>
-        <animate id="sunGlowOuterOpacity" attributeName="opacity"
-          values="0.05;0.13;0.05" keyTimes="0;0.5;1" dur="2.4s" begin="indefinite" repeatCount="indefinite"/>
-      </circle>
-      <circle class="sun-glow" id="sunGlowInner" r="22">
-        <animateTransform id="sunGlowInnerScale" attributeName="transform" type="scale"
-          values="1;1.227;1" keyTimes="0;0.5;1" dur="2.4s" begin="indefinite" repeatCount="indefinite"/>
-        <animate id="sunGlowInnerOpacity" attributeName="opacity"
-          values="0.12;0.26;0.12" keyTimes="0;0.5;1" dur="2.4s" begin="indefinite" repeatCount="indefinite"/>
-      </circle>
-      <g id="sunRays">
-        <line class="sun-ray" x1="0.0" y1="-12.0" x2="0.0" y2="-20.0" stroke-width="2.4"/>
-        <line class="sun-ray" x1="6.5" y1="-11.3" x2="8.5" y2="-14.7" stroke-width="1.6"/>
-        <line class="sun-ray" x1="10.4" y1="-6.0" x2="17.3" y2="-10.0" stroke-width="2.4"/>
-        <line class="sun-ray" x1="13.0" y1="0.0" x2="17.0" y2="0.0" stroke-width="1.6"/>
-        <line class="sun-ray" x1="10.4" y1="6.0" x2="17.3" y2="10.0" stroke-width="2.4"/>
-        <line class="sun-ray" x1="6.5" y1="11.3" x2="8.5" y2="14.7" stroke-width="1.6"/>
-        <line class="sun-ray" x1="0.0" y1="12.0" x2="0.0" y2="20.0" stroke-width="2.4"/>
-        <line class="sun-ray" x1="-6.5" y1="11.3" x2="-8.5" y2="14.7" stroke-width="1.6"/>
-        <line class="sun-ray" x1="-10.4" y1="6.0" x2="-17.3" y2="10.0" stroke-width="2.4"/>
-        <line class="sun-ray" x1="-13.0" y1="0.0" x2="-17.0" y2="0.0" stroke-width="1.6"/>
-        <line class="sun-ray" x1="-10.4" y1="-6.0" x2="-17.3" y2="-10.0" stroke-width="2.4"/>
-        <line class="sun-ray" x1="-6.5" y1="-11.3" x2="-8.5" y2="-14.7" stroke-width="1.6"/>
-        <animateTransform attributeName="transform" type="rotate"
-          from="0 0 0" to="360 0 0" begin="-8s" dur="70s" repeatCount="indefinite"/>
-      </g>
-      <circle class="sun-core" r="11.5" stroke="#c97f14" stroke-width="0.6"/>
+      <!-- Statisches Wetter-Icon statt animierter Sonnengrafik (kein
+           SMIL/CSS-Animation mehr - kein Flacker-Risiko). Icon+Farbe
+           werden per JS gewaehlt (pickPvIcon), siehe dort. -->
+      <text class="pv-icon" id="pvIcon" y="11" fill="var(--sun)">&#xf185;</text>
       <text class="node-value" y="36">—</text>
       <text class="node-sub" y="47">PV</text>
       <text class="node-extra" id="pvShare" y="58"></text>
@@ -300,7 +255,13 @@
    &prodCurve=     Kommagetrennte PV-Leistungswerte (W) ueber den Tag, ca. alle 15min
    &consCurve=     Kommagetrennte Verbrauchswerte (W) ueber den Tag, ca. alle 15min
    &battCurve=     Kommagetrennte Batterieleistungswerte (W, +/-) ueber den Tag, ca. alle 15min
-   &socCurve=      Kommagetrennte Ladezustands-Werte (%, 0-100) ueber den Tag, ca. alle 15min */
+   &socCurve=      Kommagetrennte Ladezustands-Werte (%, 0-100) ueber den Tag, ca. alle 15min
+   &wetterIcon=    Optional: OpenWeatherMap-Icon-Code (z.B. "01d", "10n" - siehe
+                   wetter-script.js/current.weather[0].icon), waehlt das passende
+                   Wetter-Icon fuer die PV-Kachel (Sonne/Sonne+Wolken/Nacht/
+                   Nacht+Wolken/Regen/Gewitter/Schnee/Nebel/Wolken). Fehlt der
+                   Parameter, wird ersatzweise aus PV-Leistung + Tageszeit des
+                   Browsers geschaetzt, ob es Sonne/Wolken/Nacht ist. */
 const p = new URLSearchParams(location.search);
 /* Sobald IRGENDEIN Parameter da ist, laeuft die Kachel "live" -
    dann werden fehlende/zu kurze Kurven NICHT mehr mit der vollen
@@ -329,6 +290,7 @@ const battSoc   = num(p.get("batterieSoc"), 100);
 const netz      = num(p.get("netz"), -2400.6);
 const haus      = num(p.get("hausverbrauch"), 0);
 const wallbox   = num(p.get("wallbox"), 0);
+const wetterIcon = p.get("wetterIcon");
 
 const DUMMY_PROD_CURVE = [0,0,0,0,50,320,980,1850,2650,3150,3420,3180,2960,3280,3080,2560,1780,880,180,0];
 const DUMMY_CONS_CURVE = [420,390,360,330,300,350,430,510,600,650,700,680,650,700,760,910,1420,2180,2760,2380];
@@ -347,6 +309,61 @@ function fmtPower(w){
   const abs = Math.abs(w);
   if (abs >= 1000) return (w / 1000).toFixed(1).replace(".", ",") + " kW";
   return Math.round(w) + " W";
+}
+
+/* Statische Wetter-/PV-Icons (Font-Awesome-6-Free-Solid-Unicode,
+   ueber das im <head> geladene Icon-Font-CSS) statt animierter
+   Sonnengrafik - keine Animation mehr, also kein Flacker-Risiko. */
+const WEATHER_ICONS = {
+  clearDay:     { glyph: "", color: "var(--sun)" },   // fa-sun
+  clearNight:   { glyph: "", color: "#9fb4d1" },       // fa-moon
+  pcloudyDay:   { glyph: "", color: "var(--sun)" },    // fa-cloud-sun
+  pcloudyNight: { glyph: "", color: "#9fb4d1" },       // fa-cloud-moon
+  cloudy:       { glyph: "", color: "var(--muted)" },  // fa-cloud
+  rain:         { glyph: "", color: "var(--accent)" }, // fa-cloud-rain
+  showers:      { glyph: "", color: "var(--accent)" }, // fa-cloud-showers-heavy
+  storm:        { glyph: "", color: "var(--accent)" }, // fa-cloud-bolt
+  snow:         { glyph: "", color: "var(--soc)" },    // fa-snowflake
+  fog:          { glyph: "", color: "var(--muted)" }   // fa-smog
+};
+
+/* Ordnet einen OpenWeatherMap-Icon-Code (z.B. "01d","10n" - genau das,
+   was wetter-script.js schon als current.weather[0].icon abruft) einem
+   unserer Icon-Keys zu. Gleiche Codes wie in wetter.html/owmToKey. */
+function owmCodeToIconKey(code){
+  const night = code.endsWith("n");
+  const num = code.slice(0, 2);
+  switch (num) {
+    case "01": return night ? "clearNight" : "clearDay";
+    case "02": return night ? "pcloudyNight" : "pcloudyDay";
+    case "03":
+    case "04": return "cloudy";
+    case "09": return "showers";
+    case "10": return "rain";
+    case "11": return "storm";
+    case "13": return "snow";
+    case "50": return "fog";
+    default:   return night ? "clearNight" : "clearDay";
+  }
+}
+
+/* Ohne echten Wettercode (Standalone/Demo bzw. solange in ioBroker
+   noch kein &wetterIcon= mitgegeben wird): grobe Schaetzung anhand
+   PV-Leistung + aktueller Browser-Uhrzeit. */
+function guessIconKey(pvWatt){
+  const hour = new Date().getHours();
+  const isDay = hour >= 6 && hour < 20;
+  if (isDay) {
+    if (pvWatt >= 600) return "clearDay";
+    if (pvWatt > 0) return "pcloudyDay";
+    return "cloudy";
+  }
+  return pvWatt > 0 ? "pcloudyNight" : "clearNight";
+}
+
+function pickPvIcon(pvWatt, owmCode){
+  const key = owmCode ? owmCodeToIconKey(owmCode) : guessIconKey(pvWatt);
+  return WEATHER_ICONS[key] || WEATHER_ICONS.clearDay;
 }
 
 /* Animationsdauer abhaengig von der Leistung - mehr Watt = schneller */
@@ -393,18 +410,10 @@ function animateDots(groupId, pathId, active, forward, watt, color){
 
 /* ---- PV ---- */
 document.getElementById("sunGroup").querySelector(".node-value").textContent = fmtPower(pv);
-if (pv > 0) {
-  document.getElementById("sunGroup").classList.add("sun-active");
-  /* SMIL-Animationen (begin="indefinite" im SVG) erst jetzt per JS
-     starten - so laufen sie nur, wenn die Sonne wirklich aktiv ist,
-     und starten nicht schon "unsichtbar" beim Laden im Hintergrund. */
-  document.getElementById("sunGlowOuterScale").beginElement();
-  document.getElementById("sunGlowOuterOpacity").beginElement();
-  setTimeout(() => {
-    document.getElementById("sunGlowInnerScale").beginElement();
-    document.getElementById("sunGlowInnerOpacity").beginElement();
-  }, 500);
-}
+const pvIconEl = document.getElementById("pvIcon");
+const pvIcon = pickPvIcon(pv, wetterIcon);
+pvIconEl.textContent = pvIcon.glyph;
+pvIconEl.setAttribute("fill", pvIcon.color);
 animateDots("pvDots", "pvPath", pv > 0, true, pv, "var(--sun)");
 
 /* Anteil der PV-Erzeugung am aktuellen Hausverbrauch
